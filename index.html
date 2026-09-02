@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>太平洋 · 保险意向 SDR Agent</title>
+<style>
+:root{
+  --bg:#F4F8FD;
+  --surface:#FFFFFF;
+  --surface-2:#F6F9FD;
+  --ink:#0E2038;
+  --ink-2:#465B77;
+  --ink-3:#8AA0BC;
+  --line:#DCE7F5;
+  --line-2:#EEF4FB;
+  --primary:#2E86FF;
+  --primary-deep:#1760D6;
+  --primary-soft:#E7F0FF;
+  --accent:#5BBEFF;
+  --accent-soft:#E3F6FF;
+  --accent-ink:#087FB8;
+  --ok:#2F855A;
+  --danger:#C2413C;
+  --danger-soft:#FBEAE8;
+  --r-lg:16px;
+  --r-md:10px;
+  --r-sm:8px;
+  --shadow-1:0 1px 2px rgba(23,96,214,.05), 0 4px 16px rgba(23,96,214,.07);
+  --shadow-2:0 16px 48px rgba(23,96,214,.18);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:linear-gradient(180deg,#F7FAFE 0%,#EEF5FD 100%);background-attachment:fixed;color:var(--ink);font-size:13.5px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:inherit;font-size:13px;color:var(--ink)}
+::selection{background:var(--primary-soft)}
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:14px;height:50px;padding:0 18px;background:linear-gradient(110deg,#1760D6 0%,#2E86FF 55%,#5BBEFF 100%);background-size:160% 160%;color:#fff;box-shadow:0 2px 12px rgba(23,96,214,.26);animation:topbarFlow 9s ease-in-out infinite alternate;position:relative;overflow:hidden}
+.topbar::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(55% 130% at 50% -30%, rgba(255,255,255,.30), transparent 62%);animation:breathe 4.6s ease-in-out infinite}
+@keyframes topbarFlow{0%{background-position:0% 50%}100%{background-position:100% 50%}}
+@keyframes breathe{0%,100%{opacity:.30;transform:scale(1)}50%{opacity:.75;transform:scale(1.05)}}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;letter-spacing:.02em}
+.brand svg{display:block;margin-left:-6px}
+.brand-name{margin-left:-8px}
+.ws{display:flex;gap:6px;margin-left:8px}
+.ws button{font-size:12px;color:rgba(255,255,255,.82);padding:4px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.24);transition:background .16s,color .16s}
+.ws button.on{background:#fff;color:var(--primary-deep);font-weight:600;border-color:#fff}
+.ws button:not(.on):hover{background:rgba(255,255,255,.12)}
+.topbar .spacer{flex:1}
+.topbar .user{display:flex;align-items:center;gap:8px;font-size:12.5px}
+.topbar .user .ava{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#5BBEFF,#A8D4FF);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:52px minmax(0,1fr);gap:8px;padding:0 8px 0 0;max-width:1720px;margin:0 auto;height:calc(100vh - 50px);overflow:hidden}
+.side{background:var(--surface);border:none;border-right:1px solid var(--line);padding:0 4px;height:100%;position:sticky;top:0;display:flex;flex-direction:column;overflow:auto}
+.side .nav-item:first-of-type{margin-top:4px}
+.nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;width:100%;padding:10px 1px;border-radius:12px;font-size:10.5px;font-weight:500;color:var(--ink-2);text-align:center;transition:none}
+.nav-item svg{flex:none;width:18px;height:18px}
+.nav-item:hover{background:var(--surface-2);color:var(--ink)}
+.nav-item.active{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 4px rgba(11,31,56,.08);padding:4px 3px;width:calc(100% - 4px);margin:0 auto}
+.nav-item.active svg path{stroke:url(#navGrad)}
+.nav-item.disabled{opacity:.4;cursor:not-allowed}
+.nav-item .badge{display:none}
+.nav-item.active .badge{background:rgba(255,255,255,.22);color:#fff}
+.side .gl{display:none}
+.side .side-foot{display:none}
+
+/* ---------- views ---------- */
+main{min-width:0;height:100%;overflow:hidden;display:flex;flex-direction:column}
+.view{display:none;min-width:0;height:100%;overflow:auto;padding-bottom:28px}
+.view.active{display:flex;flex-direction:column;animation:viewIn .3s ease both}
+@keyframes viewIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.view-head{display:flex;align-items:center;gap:10px;margin:9px 0;flex-wrap:wrap}
+.view-head h1{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.view-head .sub{font-size:12.5px;color:var(--ink-3)}
+.view-head .spacer{flex:1}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-1);overflow:hidden}
+.panel-head{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line-2);font-weight:600;font-size:13px;background:var(--surface-2)}
+.panel-head .spacer{flex:1}
+.panel-head .count{font-size:11px;color:var(--ink-3);font-weight:400}
+
+/* ---------- chat: 3 columns ---------- */
+.chat-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;align-items:start;flex:1;min-height:0}
+.convo-search{margin:10px 12px 6px;display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:var(--r-md);padding:7px 10px;background:var(--surface-2)}
+.convo-search input{border:none;outline:none;flex:1;background:transparent;font-size:12.5px}
+.tabs{display:flex;gap:2px;padding:0 12px 8px;border-bottom:1px solid var(--line-2);margin-bottom:4px}
+.tabs button{font-size:12px;color:var(--ink-3);padding:5px 10px;border-radius:999px}
+.tabs button.on{background:var(--primary-soft);color:var(--primary-deep);font-weight:600}
+.convo-list{max-height:calc(100vh - 240px);overflow:auto}
+.convo{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--line-2);cursor:pointer;transition:background .16s;width:100%;text-align:left}
+.convo:hover{background:var(--surface-2)}
+.convo.active{background:#F2F7FD}
+.convo .ava{width:28px;height:28px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:var(--primary-soft);color:var(--primary-deep);font-size:11px;font-weight:700}
+.convo .meta{min-width:0;flex:1}
+.convo .top{display:flex;align-items:center;gap:6px;white-space:nowrap;min-width:0}
+.convo .top .nm{font-size:12px;font-weight:600;white-space:nowrap}
+.convo .top .id{font-size:10px;color:var(--ink-3);font-family:var(--mono)}
+.convo .top .tm{margin-left:auto;font-size:10.5px;color:var(--ink-3);flex:none;padding-right:0}
+.convo .msg{font-size:11px;line-height:1.45;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;max-width:100%;text-align:left;padding:0;border:none;background:transparent}
+.convo .tags{display:flex;gap:4px;margin-top:2px;align-items:center;flex-wrap:nowrap;overflow:hidden}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-size:10.5px;color:var(--ink-2);white-space:nowrap}
+.chip.blue{background:var(--accent-soft);border-color:#C8E6F7;color:var(--accent-ink)}
+.chip.red{background:var(--danger-soft);border-color:#F4D2CF;color:var(--danger)}
+
+.thread{display:flex;flex-direction:column;height:calc(100vh - 232px);min-height:540px}
+.thread-head{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--line-2)}
+.thread-head .nm{font-weight:600;font-size:14px;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.thread-head small{display:block;font-weight:400;font-size:11.5px;color:var(--ink-3)}
+.thread-head .st{margin-left:auto;font-size:12px;color:var(--ok);display:flex;align-items:center;gap:6px}
+.thread-head .st .dot{width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.msgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:13px;background:#fff}
+.msg{max-width:78%;padding:11px 15px;border-radius:18px;font-size:13px;line-height:1.65;animation:none}
+@keyframes msgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.msg.v{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.msg.a{align-self:flex-end;background:var(--primary-soft);border:1px solid #C9E0FF;color:var(--ink);border-bottom-right-radius:6px}
+.msg .meta{display:block;font-size:10.5px;opacity:.75;margin-top:5px}
+.msg.a .meta{color:var(--ink-3)}
+/* AI 话术合规确认卡片 */
+.draft-card{align-self:flex-end;width:min(100%,600px);background:#fff;border:1.5px dashed #7FB6FF;border-radius:16px;padding:11px 12px 9px;animation:msgIn .28s ease}
+.dc-top{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--primary-deep);margin-bottom:7px}
+.dc-top .ic{width:20px;height:20px;border-radius:7px;background:linear-gradient(135deg,#2E86FF,#8F6CFF);color:#fff;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.dc-top .pending{margin-left:auto;font-size:10px;font-weight:600;color:#A86400;background:#FFF1D1;border:1px solid #F5DCA9;border-radius:999px;padding:1px 9px;white-space:nowrap}
+.dc-body{font-size:13px;line-height:1.65;color:var(--ink);background:#F6FAFF;border:1px solid #E3EEFB;border-radius:10px;padding:9px 11px;margin-bottom:9px}
+.dc-foot{display:flex;justify-content:flex-end;gap:8px}
+.dc-note{display:flex;align-items:center;justify-content:flex-end;gap:4px;font-size:10px;color:var(--ink-3);margin-top:6px}
+.dc-note svg{color:var(--primary);flex:none}
+.typing{display:inline-flex;gap:4px;padding:3px 1px}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--primary);opacity:.5;animation:typing 1.1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes typing{0%,100%{transform:none;opacity:.4}50%{transform:translateY(-3px);opacity:1}}
+.script-bar{display:flex;gap:7px;padding:9px 14px;border-top:1px solid var(--line-2);background:#fff;flex-wrap:wrap}
+.script-btn{font-size:11.5px;color:var(--primary);background:#fff;border:1px solid #BBD6F4;border-radius:999px;padding:5px 12px;transition:background .16s,border-color .16s}
+.script-btn:hover{background:#F2F8FF;border-color:var(--primary)}
+.composer{display:flex;gap:9px;padding:11px 14px 12px;border-top:1px solid var(--line-2);background:#fff}
+.composer input{flex:1;border:1px solid var(--line);border-radius:var(--r-md);padding:9px 13px;background:var(--surface-2);transition:border-color .16s,box-shadow .16s;outline:none}
+.composer input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(27,111,224,.13);background:#fff}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:13px;font-weight:600;border-radius:var(--r-md);padding:9px 16px;transition:transform .13s,box-shadow .16s,background .16s;white-space:nowrap}
+.btn:active{transform:translateY(1px) scale(.985)}
+.btn.primary{background:linear-gradient(115deg,#2E86FF 0%,#52A8FF 100%);color:#fff}
+.btn.primary:hover{background:linear-gradient(115deg,#1D6BE0 0%,#3F9BF0 100%);box-shadow:0 6px 18px rgba(46,134,255,.36)}
+.btn.soft{background:var(--primary-soft);color:var(--primary-deep)}
+.btn.soft:hover{background:#D0E2FA}
+.btn.ghost{border:1px solid var(--line);background:#fff;color:var(--ink)}
+.btn.ghost:hover{border-color:var(--ink-3);background:var(--surface-2)}
+.btn.sm{padding:6px 11px;font-size:12px;border-radius:var(--r-sm)}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(46,134,255,.42)}100%{box-shadow:0 0 0 13px rgba(46,134,255,0)}}
+.pulse-ring{animation:ring 1.4s ease-out 3}
+
+/* ---------- AI right panel ---------- */
+.agent-panel{display:flex;flex-direction:column;gap:13px;max-height:calc(100vh - 232px);overflow:auto;padding:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-1)}
+.card-head{display:flex;align-items:center;gap:7px;padding:10px 14px;border-bottom:1px solid var(--line-2);font-weight:600;font-size:12.5px;background:var(--surface-2);border-radius:var(--r-lg) var(--r-lg) 0 0}
+.card-head .spacer{flex:1}
+.card-body{padding:15px 17px}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:12px;border-bottom:1px dashed var(--line-2)}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--ink-3)}
+.kv .v{font-weight:600;text-align:right}
+.sec-t{font-size:11px;color:var(--ink-3);letter-spacing:.06em;margin:11px 0 6px;font-weight:600}
+.sec-t:first-child{margin-top:0}
+.ai-text{font-size:12px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:9px 11px;margin-top:5px}
+.ai-text b{color:var(--ink)}
+.score-hero{display:flex;align-items:center;gap:14px;padding:2px 0 8px}
+.score-num{font-size:38px;font-weight:800;font-family:var(--mono);letter-spacing:-.03em;line-height:1;background:linear-gradient(120deg,#1760D6 0%,#2E86FF 60%,#5BBEFF 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.score-num small{font-size:13px;font-weight:600;color:var(--ink-3);margin-left:4px}
+.score-pill{font-size:11px;font-weight:700;border-radius:999px;padding:2px 9px}
+.score-pill.high{background:var(--primary-soft);color:var(--primary-deep)}
+.score-pill.mid{background:var(--accent-soft);color:var(--accent-ink)}
+.score-pill.low{background:var(--surface-2);color:var(--ink-3)}
+.score-item{border:1px solid var(--line);border-radius:var(--r-md);margin-bottom:7px;overflow:hidden}
+.score-item .head{display:flex;align-items:center;gap:7px;padding:8px 11px;cursor:pointer;font-size:12px;font-weight:600;background:var(--surface-2)}
+.score-item .head:hover{background:#EFF4FA}
+.score-item .head .v{margin-left:auto;font-family:var(--mono);color:var(--primary)}
+.score-item .head .arr{font-size:9px;color:var(--ink-3);transition:transform .2s}
+.score-item.open .head .arr{transform:rotate(90deg)}
+.score-item .body{display:none;padding:9px 11px;font-size:11.5px;color:var(--ink-2);border-top:1px solid var(--line-2);background:#fff}
+.score-item.open .body{display:block}
+.score-item .body p{margin:4px 0;line-height:1.55}
+.score-item .body .dim{display:flex;justify-content:space-between;padding:3px 0;font-size:11.5px}
+.score-item .body .dim span{color:var(--ink-3)}
+.track{height:3px;background:var(--line-2);border-radius:999px;overflow:hidden;margin-top:5px}
+.fill{height:100%;background:linear-gradient(90deg,#7FB2FF 0%,#A9D4FF 100%);border-radius:999px;width:0;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.fill.accent{background:var(--accent)}
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.quick-actions .btn{width:100%;font-size:12.5px;padding:10px 8px}
+.script-item{display:flex;gap:9px;align-items:flex-start;padding:9px 11px;border:1px solid var(--line);border-radius:var(--r-md);margin-bottom:7px;font-size:12px;color:var(--ink-2);cursor:pointer;transition:border-color .16s,background .16s;text-align:left;width:100%}
+.script-item:hover{border-color:var(--primary);background:var(--primary-soft)}
+.script-item b{color:var(--ink);display:block;font-size:12px;margin-bottom:1px}
+.script-item .tag{flex:none;font-size:10px;background:var(--accent-soft);color:var(--accent-ink);border-radius:999px;padding:0 7px;height:fit-content}
+
+/* ---------- leads ---------- */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.toolbar .search{flex:1;min-width:220px;display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;border-radius:var(--r-md);padding:8px 12px}
+.toolbar .search input{border:none;outline:none;flex:1;background:transparent}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filter{font-size:12px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink-2);transition:all .15s}
+.filter:hover{border-color:var(--ink-3)}
+.filter.active{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}
+.table-wrap{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);overflow:auto;box-shadow:var(--shadow-1)}
+table{width:100%;border-collapse:collapse;min-width:900px}
+th{font-size:11px;color:var(--ink-3);text-align:left;padding:10px 13px;border-bottom:1px solid var(--line-2);letter-spacing:.06em;font-weight:600;white-space:nowrap;background:var(--surface-2)}
+td{padding:11px 13px;border-bottom:1px solid var(--line-2);font-size:12.5px;vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface-2)}
+td .who{font-weight:600}
+td .sub{font-size:11px;color:var(--ink-3)}
+.status-chip{font-size:11px;font-weight:600;border-radius:999px;padding:2px 9px;display:inline-block}
+.status-chip.sql{background:var(--primary-soft);color:var(--primary-deep)}
+.status-chip.mql{background:var(--accent-soft);color:var(--accent-ink)}
+.status-chip.new{background:var(--surface-2);color:var(--ink-2)}
+.status-chip.invalid{background:var(--danger-soft);color:var(--danger)}
+
+/* ---------- insights ---------- */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px;margin-bottom:7px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 17px;box-shadow:var(--shadow-1)}
+.kpi .lab{font-size:11.5px;color:var(--ink-3)}
+.kpi .num{font-size:26px;font-weight:800;font-family:var(--mono);letter-spacing:-.02em;margin:5px 0 2px;line-height:1}
+.kpi .delta{font-size:11px;color:var(--ok);font-weight:600}
+.kpi .delta.down{color:var(--danger)}
+.insight-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:7px}
+.insight-grid .card{grid-column:span 6}
+.insight-grid .card.wide{grid-column:span 12}
+.ch-table{width:100%}
+.ch-table th{background:var(--surface-2)}
+.ch-table td{font-size:12px;padding:8px 10px}
+.ch-table .bar{height:3px;background:var(--line-2);border-radius:999px;overflow:hidden;min-width:90px}
+.ch-table .bar i{display:block;height:100%;width:0;background:var(--primary);border-radius:999px;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.donut-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.donut{width:132px;height:132px;border-radius:50%;position:relative;flex:none}
+.donut .hole{position:absolute;inset:21px;background:#fff;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut .hole .n{font-size:20px;font-weight:800;font-family:var(--mono)}
+.donut .hole .t{font-size:10px;color:var(--ink-3)}
+.legend{display:flex;flex-direction:column;gap:6px;font-size:12px}
+.legend .row{display:flex;align-items:center;gap:7px}
+.legend .sw{width:9px;height:9px;border-radius:3px;flex:none}
+.legend .pct{margin-left:auto;font-family:var(--mono);font-weight:700}
+.trend-svg{width:100%;height:170px;display:block}
+.ai-box{font-size:12.5px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:10px 12px;margin-top:8px;line-height:1.65}
+.ai-box b{color:var(--ink)}
+.ai-tip{display:flex;gap:10px;padding:11px 14px;border-radius:var(--r-md);background:var(--primary-soft);margin-top:10px;font-size:12.5px;color:var(--primary-deep)}
+.ai-tip svg{flex:none;margin-top:1px}
+.suggest-list{counter-reset:sug}
+.suggest{display:flex;gap:11px;padding:11px 0;border-bottom:1px dashed var(--line-2)}
+.suggest:last-child{border-bottom:none}
+.suggest::before{counter-increment:sug;content:counter(sug);flex:none;width:21px;height:21px;border-radius:50%;background:var(--primary);color:#fff;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.suggest b{display:block;font-size:12.5px;margin-bottom:2px}
+.suggest p{font-size:12px;color:var(--ink-2)}
+
+
+
+/* ---------- 合并会话 + AI 分析 ---------- */
+.merged{display:grid;grid-template-columns:210px minmax(0,1fr) 290px;height:100%;min-height:0}
+.merged .convo-col{border-right:1px solid var(--line-2);display:flex;flex-direction:column;min-width:0}
+.merged .convo-col .convo-list{flex:1;max-height:none}
+.merged .thread{border-right:1px solid var(--line-2);border-radius:0;height:100%;min-height:0}
+
+.merged .panel-head{height:44px;padding:0 14px}
+.merged .thread-head{height:44px;padding:0 16px}
+.merged .agent-tabs{height:44px;align-items:center;padding:0 14px}
+.merged .agent-panel{height:100%;min-height:0;max-height:none;overflow:hidden;padding:0;display:flex;flex-direction:column;background:linear-gradient(180deg,#E9F4FF 0%,#F1ECFF 18%,#FFFFFF 55%)}
+.merged .agent-tabs{flex:none;display:flex;align-items:center;gap:2px;height:44px;padding:0 14px;border-bottom:1px solid var(--line-2);background:var(--surface)}
+.merged .agent-scroll{flex:1;min-height:0;overflow:auto;background:transparent}
+.merged .agent-scroll .card:first-child{background:transparent}
+.merged .card{border:none;box-shadow:none;border-radius:0}
+.merged .card + .card{border-top:1px solid var(--line-2)}
+.merged .card-head{background:transparent;padding:13px 17px}
+.merged .card-body{padding:13px 17px}
+.merged .quick-actions{padding:0 17px 15px}
+@media (max-width:1240px){
+  .merged{display:block}
+  .merged .thread{border-right:none;height:540px}
+  .merged .convo-col{border-right:none}
+  .merged .agent-panel{display:block;max-height:none}
+  .merged .agent-tabs{position:sticky;top:0;z-index:3}
+  .merged .agent-scroll{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:12px 0;overflow:visible}
+  .merged .agent-scroll .card:first-child{grid-column:1/-1}
+  .merged .card{border:1px solid var(--line);box-shadow:var(--shadow-1);border-radius:var(--r-lg)}
+  .merged .card + .card{border-top:1px solid var(--line)}
+}
+
+.sub-tabs{display:flex;gap:2px;padding:12px 14px 0;border-bottom:1px solid var(--line-2)}
+.sub-tabs button{font-size:12.5px;color:var(--ink-3);padding:7px 14px;border-radius:10px 10px 0 0;border-bottom:2px solid transparent;transition:color .16s,background .16s}
+.sub-tabs button:hover{color:var(--ink)}
+.sub-tabs button.on{color:var(--primary);font-weight:600;border-bottom-color:var(--primary);background:var(--primary-soft)}
+.tab-pane{display:none}
+.tab-pane.on{display:block}
+
+
+.func-grid{display:flex;gap:6px}
+.func-bubble{flex:1;font-size:11px;font-weight:600;color:var(--primary);background:#fff;border:1px solid #BBD6F4;border-radius:999px;padding:3px 4px;transition:background .16s,border-color .16s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.func-bubble:hover{background:#F2F8FF;border-color:var(--primary)}
+
+.ai-input-area{flex:none;border-top:1px solid var(--line-2);padding:11px 14px 12px;background:var(--surface)}
+.ai-composer{display:flex;gap:8px;margin-top:9px}
+.ai-composer input{flex:1;border:1px solid var(--line);border-radius:var(--r-md);padding:9px 12px;background:var(--surface-2);outline:none;transition:border-color .16s,box-shadow .16s,background .16s;font-size:12.5px}
+.ai-composer input:focus{border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px rgba(46,134,255,.12)}
+
+.composer input,.ai-composer input{height:38px;padding:0 13px;font-size:13px}
+.composer .btn,.ai-composer .btn{height:38px;padding:0 18px}
+
+.script-move{flex:none;width:26px;height:26px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;transition:background .16s,color .16s}
+.script-move:hover{background:var(--primary);color:#fff}
+
+/* ---------- 细浅滚动条 ---------- */
+*{scrollbar-width:thin;scrollbar-color:#D7E6F8 transparent}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#D7E6F8;border-radius:999px}
+::-webkit-scrollbar-thumb:hover{background:#BBD2F0}
+::-webkit-scrollbar-corner{background:transparent}
+.chip-list{display:flex;flex-wrap:wrap;gap:4px}
+
+.icon-btn{width:38px;padding:0}
+.icon-btn svg{width:18px;height:18px;flex:none}
+.icon-btn:hover{transform:translateY(-1px) scale(1.04)}
+
+.robot-icon{display:inline-flex;align-items:center;margin-top:6px;animation:thinkBob 3.6s ease-in-out infinite;filter:drop-shadow(0 0 5px rgba(46,134,255,.25))}
+@keyframes thinkBob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.05)}}
+.robot-icon svg circle{transform-box:fill-box;transform-origin:center;animation:eyeBlink 4.2s ease-in-out infinite}
+@keyframes eyeBlink{0%,90%,100%{transform:scaleY(1)}93%{transform:scaleY(.12)}96%{transform:scaleY(1)}}
+/* ---------- 选题库 / 内容制作 ---------- */
+.topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px}
+.topic-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 18px;box-shadow:var(--shadow-1);display:flex;flex-direction:column;gap:8px;transition:transform .16s,box-shadow .16s,border-color .16s}
+.topic-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-2);border-color:#BBD6F4}
+.tc-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tc-heat{margin-left:auto;font-size:11px;font-weight:700;color:var(--primary);font-family:var(--mono)}
+.topic-card h3{font-size:14px;font-weight:600;line-height:1.5;color:var(--ink)}
+.tc-meta{font-size:11.5px;color:var(--ink-3);display:flex;gap:10px;flex-wrap:wrap}
+.tc-meta .up{color:var(--danger);font-weight:600}
+.tc-actions{display:flex;gap:8px;margin-top:2px}
+.topic-card .ai-tip{padding:7px 10px;font-size:11.5px;margin:0}
+.empty{grid-column:1/-1;padding:30px;text-align:center;color:var(--ink-3);font-size:12.5px}
+.maker-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:7px;align-items:start}
+.maker-chat{display:flex;flex-direction:column;height:calc(100vh - 232px);min-height:520px}
+.made{background:#fff;border:1px solid #BBD6F4;border-left:3px solid var(--primary);border-radius:var(--r-md);padding:12px 14px;animation:msgIn .28s ease both}
+.made .mk-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.made .mk-body{font-size:12.5px;color:var(--ink-2);white-space:pre-line;line-height:1.7}
+.made .mk-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.made .mk-tags span{font-size:11px;background:var(--primary-soft);color:var(--primary-deep);border-radius:999px;padding:2px 8px}
+.made .mk-foot{display:flex;gap:12px;margin-top:8px;font-size:11.5px;color:var(--ink-3);flex-wrap:wrap}
+.made .mk-foot b{color:var(--primary)}
+.mk-his{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line-2);font-size:12px}
+.mk-his:last-child{border-bottom:none}
+.mk-his .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-2)}
+.mk-his .tm{font-size:10.5px;color:var(--ink-3);flex:none}
+@media (max-width:1240px){.maker-grid{grid-template-columns:1fr}.maker-chat{height:540px}}
+
+/* ---------- modal & toast ---------- */
+.modal-mask{position:fixed;inset:0;background:rgba(8,27,48,.46);backdrop-filter:blur(3px);display:none;align-items:flex-start;justify-content:center;z-index:60;padding:6vh 16px;overflow:auto}
+.modal-mask.open{display:flex}
+.modal{background:#fff;border-radius:14px;max-width:680px;width:100%;box-shadow:var(--shadow-2);animation:modalIn .26s cubic-bezier(.2,.9,.3,1.15) both}
+@keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+.modal-head{display:flex;align-items:center;gap:11px;padding:16px 20px;border-bottom:1px solid var(--line-2)}
+.modal-head h3{font-size:15.5px}
+.modal-head .ai-badge{font-size:11px;background:var(--primary-soft);color:var(--primary-deep);border-radius:999px;padding:2px 10px;display:inline-flex;gap:5px;align-items:center}
+.modal-head .close{margin-left:auto;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--ink-3)}
+.modal-head .close:hover{background:var(--surface-2);color:var(--ink)}
+.modal-body{padding:18px 20px;max-height:62vh;overflow:auto}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.field label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;margin-bottom:5px;color:var(--ink-2)}
+.field label .ai-tag{font-size:10px;background:var(--primary-soft);color:var(--primary-deep);border-radius:999px;padding:0 7px;font-weight:600;opacity:0;transition:opacity .3s}
+.field label .ai-tag.on{opacity:1}
+.field input,.field select{width:100%;border:1px solid var(--line);border-radius:var(--r-md);padding:9px 11px;background:var(--surface-2);outline:none;transition:border-color .16s,background .16s,box-shadow .16s}
+.field input:focus,.field select:focus{border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px rgba(27,111,224,.11)}
+.field input.filled{background:#F3F8FD;border-color:#C7DCF6}
+.modal-foot{display:flex;justify-content:flex-end;gap:9px;padding:14px 20px;border-top:1px solid var(--line-2)}
+.record-note{font-size:12px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:9px 11px;margin-bottom:10px}
+.record-note b{color:var(--ink)}
+.toasts{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:9px;z-index:80}
+.toast{background:var(--primary-deep);color:#fff;border-radius:var(--r-md);padding:12px 16px;font-size:12.5px;box-shadow:var(--shadow-2);display:flex;align-items:center;gap:9px;animation:toastIn .28s cubic-bezier(.2,.9,.3,1.15) both;max-width:340px}
+@keyframes toastIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+.toast.out{animation:toastOut .22s ease both}
+@keyframes toastOut{to{opacity:0;transform:translateX(18px)}}
+
+.mono{font-family:var(--mono)}
+.muted{color:var(--ink-3)}
+.small{font-size:12px}
+@media (max-width:1240px){
+  .chat-grid{grid-template-columns:200px minmax(0,1fr)}
+  .agent-panel{grid-column:1/-1;max-height:none;display:grid;grid-template-columns:1fr 1fr;align-items:start}
+  .insight-grid .card{grid-column:span 12}
+}
+@media (max-width:960px){
+  .app{grid-template-columns:1fr;padding:0 8px 10px}
+  .side{position:static;display:flex;flex-wrap:wrap;gap:5px;padding:8px;height:auto;border:1px solid var(--line);border-radius:var(--r-lg)}
+  .side .gl,.side .side-foot,.nav-item .badge{display:none}
+  .nav-item{flex-direction:row;width:auto;padding:7px 11px;gap:8px;font-size:13px;text-align:left}
+  .chat-grid{grid-template-columns:1fr}
+  .convo-list{max-height:200px}
+  .thread{height:540px}
+  .agent-panel{display:block}
+  .form-grid{grid-template-columns:1fr}
+  .ws button{display:none}
+}
+@media (max-width:560px){
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .donut-wrap{justify-content:center}
+  .topbar .user .nm{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+}
+
+/* ===== Apple 原生质感精修 ===== */
+:root{
+  --r-lg:18px;--r-md:11px;--r-sm:9px;
+  --shadow-1:0 1px 1px rgba(11,31,56,.04),0 2px 6px rgba(11,31,56,.04),0 12px 32px rgba(11,31,56,.06);
+  --shadow-2:0 4px 12px rgba(11,31,56,.06),0 28px 64px rgba(11,31,56,.14);
+}
+body{text-rendering:optimizeLegibility}
+.view-head h1{letter-spacing:-.02em}
+.topbar{backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 2px 14px rgba(23,96,214,.22)}
+.side{background:rgba(255,255,255,.76);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border-right-color:rgba(220,231,245,.85)}
+.panel{background:#fff}
+.btn{-webkit-tap-highlight-color:transparent;transition:transform .15s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,background .2s ease}
+.btn.primary{background:linear-gradient(115deg,#2E86FF,#4D9BFF);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 12px rgba(46,134,255,.24)}
+.btn.primary:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 6px 18px rgba(46,134,255,.32)}
+.btn:active{transform:translateY(1px) scale(.97)}
+.btn:focus-visible,.filter:focus-visible,.nav-item:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(46,134,255,.35)}
+input,select{caret-color:var(--primary)}
+.composer input:focus,.ai-composer input:focus{box-shadow:0 0 0 3px rgba(46,134,255,.16)}
+.msg{border-radius:20px;box-shadow:none}
+.msg.a{box-shadow:none}
+.nav-item.active{box-shadow:0 1px 4px rgba(11,31,56,.08)}
+.card,.kpi,.topic-card,.table-wrap{transition:box-shadow .25s ease,border-color .25s ease}
+.topic-card:hover{box-shadow:var(--shadow-2)}
+.modal{border-radius:18px}
+.score-item .head,.script-item{border-radius:10px}
+@media (prefers-reduced-transparency:reduce){
+  .side{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}
+  .topbar{backdrop-filter:none;-webkit-backdrop-filter:none}
+}
+
+/* ===== 统一浅蓝灰渐变外壳（顶栏/侧栏/背景一体） ===== */
+body{background:radial-gradient(120% 150% at 0% -15%, rgba(175,220,255,.50) 0%, rgba(120,190,255,.22) 35%, rgba(143,108,255,.08) 58%, rgba(255,255,255,0) 75%),linear-gradient(180deg,#DCE9F6 0%,#E6EFF8 55%,#DFEAF5 100%);background-attachment:fixed}
+@keyframes bgFlow{0%{background-position:0% 30%}100%{background-position:100% 70%}}
+@keyframes breatheBg{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:.85;transform:scale(1.08)}}
+.topbar{background:transparent;color:var(--ink);box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;animation:none}
+.topbar::after{display:none}
+.topbar .brand svg{stroke:var(--primary-deep)}
+.topbar .user .ava{background:linear-gradient(135deg,#A8CDF6,#C9DDF7);color:var(--primary-deep)}
+.side{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;border-right-color:transparent}
+.app{background:transparent}
+.merged .convo-col .panel-head{background:#fff}
+
+.topbar .brand svg{stroke:none}
+.topbar .brand-name{font-size:16px;font-weight:800;letter-spacing:.06em;color:var(--ink)}
+.btn.icon-btn{background:var(--primary-soft);color:var(--primary);box-shadow:none}
+.btn.icon-btn:hover{background:#D8E9FF;color:var(--primary);box-shadow:none}
+
+/* 左上角渐变氛围光斑 */
+.topbar::before{display:none}
+.topbar > *{position:relative;z-index:1}
+
+/* 去卡片阴影 */
+.panel,.card,.kpi,.topic-card,.table-wrap{box-shadow:none}
+.topic-card:hover{box-shadow:none}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="navGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E86FF"/><stop offset="1" stop-color="#8F6CFF"/></linearGradient></defs></svg>
+
+<header class="topbar">
+  <div class="brand">
+    <svg width="29" height="29" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <defs><linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E86FF"/><stop offset="1" stop-color="#8F6CFF"/></linearGradient></defs>
+      <path d="M12 2.6 4.2 5.6v5.1c0 4.8 3.3 9.3 7.8 10.7 4.5-1.4 7.8-5.9 7.8-10.7V5.6L12 2.6z" fill="url(#logoGrad)"/>
+      <path d="M12 7.4l1.2 3.4 3.4 1.2-3.4 1.2L12 16.6l-1.2-3.4-3.4-1.2 3.4-1.2L12 7.4z" fill="#fff"/>
+    </svg><span class="brand-name">太平洋</span>
+  </div>
+  <div class="spacer"></div>
+  <div class="user"><span class="ava">陈</span><span class="nm">陈顾问</span></div>
+</header>
+
+<div class="app">
+  <aside class="side">
+    <div class="gl">智能应用</div>
+    <button class="nav-item active" data-view="chat" onclick="switchView('chat')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8 8H5l-2 2V12a8 8 0 0 1 8-8h2a8 8 0 0 1 8 8z"/></svg>会话</button>
+    <button class="nav-item" data-view="leads" onclick="switchView('leads')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>线索</button>
+    <button class="nav-item" data-view="insight" onclick="switchView('insight')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-5 3 3 5-7"/></svg>洞察</button>
+    <button class="nav-item" data-view="topics" onclick="switchView('topics')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15l.9 2.4L22 18l-2.1.6L19 21l-.9-2.4L16 18l2.1-.6L19 15z"/></svg>选题</button>
+    <button class="nav-item" data-view="maker" onclick="switchView('maker')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4l2.2 5.3L21 11.5l-4.8 2.2L14 19l-2.2-5.3L7 11.5l4.8-2.2L14 4z"/><path d="M5 16l.8 1.9L7.7 18.7l-1.9.8L5 21l-.8-1.9L2.3 18.7l1.9-.8L5 16z"/></svg>制作</button>
+    <button class="nav-item" data-view="published" onclick="switchView('published')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 17l3-3 2 2 4-4"/></svg>发布</button>
+    <button class="nav-item" data-view="compliance" onclick="switchView('compliance')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18"/><path d="M8 21h8"/><path d="M3 7h18"/><path d="M6.5 7 4 12a2.6 2.6 0 0 0 5 0L6.5 7z"/><path d="M17.5 7 15 12a2.6 2.6 0 0 0 5 0l-2.5-5z"/></svg>合规</button>
+    <div class="side-foot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>演示环境：会话为模拟数据，可自由点击体验</div>
+  </aside>
+
+  <main>
+    <!-- ============ 会话工作台 ============ -->
+    <section class="view active" id="view-chat">
+      <div class="view-head">
+        <h1>会话工作台</h1>
+        <span class="sub">AI 智能辅助 · 话术需人工确认后发送</span>
+      </div>
+      <div class="chat-grid">
+        <div class="panel merged">
+          <div class="convo-col">
+            <div class="panel-head">客服会话<span class="spacer"></span><span class="count">6 进行中</span></div>
+          <div class="convo-search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input placeholder="搜索客服会话" aria-label="搜索客服会话"></div>
+          <div class="tabs"><button class="on">进行中</button><button>已结束</button><button>未回复 <span class="muted">8</span></button></div>
+          <div class="convo-list" id="convo-list"></div>
+          </div>
+          <div class="thread">
+          <div class="thread-head">
+            <div class="nm"><span id="t-name">王丽</span><span class="chip blue" id="t-src">小红书</span><span class="chip" id="t-age">45 岁</span></div>
+            <div class="st"><span class="dot"></span>AI 辅助 · 人工确认发送</div>
+          </div>
+          <div class="msgs" id="msgs"></div>
+          <div class="composer">
+            <input id="chat-input" placeholder="输入要发送给客户的消息，回车发送" aria-label="输入消息">
+            <button class="btn primary icon-btn" onclick="sendInput()" aria-label="发送消息"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.01 21 23 12 2.01 3 2 9l17 3-17 3z"/></svg></button>
+          </div>
+          </div>
+
+          <div class="agent-panel">
+          <div class="agent-tabs">
+            <button class="on" onclick="switchAiTab('profile', this)">客户分析</button>
+            <button onclick="switchAiTab('scripts', this)" aria-label="AI 话术"><span class="robot-icon">
+                <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <defs><linearGradient id="robotGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E86FF"/><stop offset="1" stop-color="#8F6CFF"/></linearGradient></defs>
+                  <rect x="5" y="7" width="14" height="11" rx="3" fill="url(#robotGrad)"/>
+                  <circle cx="9.5" cy="11.6" r="1.3" fill="#fff"/>
+                  <circle cx="14.5" cy="11.6" r="1.3" fill="#fff"/>
+                  <path d="M9 15.4h6" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/>
+                  <path d="M9 3l2.2 3.2M15 3l-2.2 3.2" stroke="url(#robotGrad)" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+              </span></button>
+          </div>
+          <div class="agent-scroll">
+          <div class="card">
+            <div class="tab-pane on" id="pane-profile">
+              <div class="card-body">
+                <div class="chip-list" id="p-chips"></div>
+                <div class="sec-t">用户摘要</div>
+                <div class="ai-text" id="p-summary"></div>
+                <div class="sec-t">历史互动摘要</div>
+                <div id="p-hist"></div>
+                <div class="sec-t">意向产品</div>
+                <div class="ai-text" id="p-product"></div>
+                <div class="sec-t">沟通目标</div>
+                <div class="ai-text" id="p-goal"></div>
+              </div>
+            </div>
+            <div class="tab-pane" id="pane-scripts">
+              <div class="card-body">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                  <span class="small muted">推荐话术，点击放入输入框可编辑</span>
+                  <button class="btn sm ghost" style="margin-left:auto" onclick="regenerateScripts()">换一批</button>
+                </div>
+                <div id="script-pane"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>画像 / 意向评分 <span class="spacer"></span><span class="score-pill high" id="score-pill">84 分</span></div>
+            <div class="card-body">
+              <div class="score-hero"><div class="score-num" id="score-num">84<small>/100</small></div><div class="small muted">高意向 · 建议优先跟进</div></div>
+              <div class="score-item open" id="si-bant">
+                <div class="head" onclick="toggleScore('si-bant')">BANT 打分 <span class="v" id="bant-total">81</span><span class="arr">&#9656;</span></div>
+                <div class="body" id="bant-body">
+                  <div class="dim"><span>预算 Budget</span><b id="b-budget">75</b></div>
+                  <div class="track"><div class="fill" id="f-budget" style="--w:75%"></div></div>
+                  <div class="dim"><span>需求 Need</span><b id="b-need">92</b></div>
+                  <div class="track"><div class="fill" id="f-need" style="--w:92%"></div></div>
+                  <div class="dim"><span>决策权 Authority</span><b id="b-auth">70</b></div>
+                  <div class="track"><div class="fill" id="f-auth" style="--w:70%"></div></div>
+                  <div class="dim"><span>时机 Timing</span><b id="b-time">88</b></div>
+                  <div class="track"><div class="fill accent" id="f-time" style="--w:88%"></div></div>
+                </div>
+              </div>
+              <div class="score-item" id="si-spin">
+                <div class="head" onclick="toggleScore('si-spin')">SPIN 提问建议 <span class="v" id="spin-total">80</span><span class="arr">&#9656;</span></div>
+                <div class="body">
+                  <p><b>情景 S</b>：目前家庭已有哪些保障？</p>
+                  <p><b>问题 P</b>：是否担心未来养老储备不足影响生活品质？</p>
+                  <p><b>暗示 I</b>：年龄增长后费率会上调，核保也可能变严。</p>
+                  <p><b>需求-回报 N</b>：现在配置可锁定当前费率，保障更早生效。</p>
+                </div>
+              </div>
+              <div class="score-item" id="si-match">
+                <div class="head" onclick="toggleScore('si-match')">画像匹配度 <span class="v" id="match-total">18/20</span><span class="arr">&#9656;</span></div>
+                <div class="body">
+                  <p>目标人群「40-55 岁家庭保障」部分匹配：符合年龄与家庭角色条件，产品浏览行为命中年金险场景。</p>
+                  <p class="muted">打分标准可由企业自定义，对沟通内容和用户质量综合评分。</p>
+                </div>
+              </div>
+              <div class="small muted" style="margin-top:6px">BANT + SPIN 模型实时打分，规则可在「评分模型设置」中自定义</div>
+            </div>
+          </div>
+          </div>
+          <div class="ai-input-area">
+            <div class="func-grid">
+              <button class="func-bubble" onclick="openScripts()">沟通话术</button>
+              <button class="func-bubble" onclick="fillComposer(aiScripts[2].text)">引导留资</button>
+              <button class="func-bubble" onclick="openLeadModal()">客户建档</button>
+              <button class="func-bubble" onclick="openRecordModal()">创建记录</button>
+            </div>
+            <div class="ai-composer">
+              <input id="ai-input" placeholder="向 AI 咨询话术或客户问题，回车发送" aria-label="AI 咨询输入">
+              <button class="btn primary icon-btn" onclick="sendAiAsk()" aria-label="发送给 AI"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.01 21 23 12 2.01 3 2 9l17 3-17 3z"/></svg></button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 线索中心 ============ -->
+    <section class="view" id="view-leads">
+      <div class="view-head">
+        <h1>线索中心</h1>
+        <span class="sub">AI 建档 · 自动分配 · 全流程可追溯</span>
+        <div class="spacer"></div>
+        <button class="btn primary" onclick="openLeadModal()">+ 新建线索</button>
+      </div>
+      <div class="toolbar">
+        <div class="filters" id="lead-filters">
+          <button class="filter active" data-f="all" onclick="setLeadFilter('all',this)">全部 <span class="muted">268</span></button>
+          <button class="filter" data-f="new" onclick="setLeadFilter('new',this)">新线索 <span class="muted">54</span></button>
+          <button class="filter" data-f="mql" onclick="setLeadFilter('mql',this)">MQL <span class="muted">126</span></button>
+          <button class="filter" data-f="sql" onclick="setLeadFilter('sql',this)">SQL <span class="muted">68</span></button>
+          <button class="filter" data-f="invalid" onclick="setLeadFilter('invalid',this)">无效 <span class="muted">20</span></button>
+        </div>
+        <div class="search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="lead-search" placeholder="搜索姓名 / 电话 / 需求" oninput="renderLeads()" aria-label="搜索线索"></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>客户</th><th>投保意向</th><th>来源</th><th>意向评分</th><th>状态</th><th>分配顾问</th><th>最近跟进</th></tr></thead>
+          <tbody id="lead-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============ AI 洞察 ============ -->
+    <section class="view" id="view-insight">
+      <div class="view-head">
+        <h1>营销 AI 洞察</h1>
+        <span class="sub">SDR 线索处理 · 渠道转化 · AI 数据解读</span>
+        <div class="spacer"></div>
+        <button class="btn ghost sm" onclick="toast('已按近 30 天数据生成报告')">导出报告</button>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="lab">线索总数</div><div class="num" data-count="268">0</div><div class="delta">+12.4% 环比</div></div>
+        <div class="kpi"><div class="lab">已处理线索</div><div class="num" data-count="231">0</div><div class="delta">86.2% 处理率</div></div>
+        <div class="kpi"><div class="lab">MQL 数</div><div class="num" data-count="126">0</div><div class="delta">+18.1% 环比</div></div>
+        <div class="kpi"><div class="lab">SQL 数</div><div class="num" data-count="68">0</div><div class="delta">+9.6% 环比</div></div>
+        <div class="kpi"><div class="lab">MQL 转化率</div><div class="num" data-count="54.5" data-dec="1">0</div><div class="delta">+3.2pct</div></div>
+        <div class="kpi"><div class="lab">跟进中线索</div><div class="num" data-count="49">0</div><div class="delta">81% 占比</div></div>
+      </div>
+      <div class="insight-grid">
+        <div class="card">
+          <div class="card-head">各渠道线索来源转化情况</div>
+          <div class="card-body" style="padding:6px 8px">
+            <table class="ch-table"><thead><tr><th>渠道</th><th>新增线索</th><th>MQL</th><th style="width:34%">转化率</th></tr></thead><tbody id="channel-tbody"></tbody></table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">投保意向类型分布</div>
+          <div class="card-body"><div class="donut-wrap">
+            <div class="donut" id="donut" role="img" aria-label="投保意向类型分布：年金险 100%"><div class="hole"><span class="n">268</span><span class="t">线索</span></div></div>
+            <div class="legend" id="donut-legend"></div>
+          </div></div>
+        </div>
+        <div class="card wide">
+          <div class="card-head">近 30 天各渠道线索增长趋势</div>
+          <div class="card-body"><svg class="trend-svg" id="trend-svg" viewBox="0 0 720 170" preserveAspectRatio="none" role="img" aria-label="近30天线索增长趋势折线图"></svg></div>
+        </div>
+        <div class="card">
+          <div class="card-head">销售退回原因分布</div>
+          <div class="card-body" id="reason-chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">AI 数据总结与决策建议</div>
+          <div class="card-body">
+            <div class="sec-t">数据总结</div>
+            <div class="ai-box">近 30 天创建线索 <b>268</b> 条，其中官网渠道占比 36%，400 热线转化率最高（40.5%），整体 MQL 转化率 54.5%。</div>
+            <div class="sec-t">数据解读</div>
+            <div class="ai-box">web 官网与朋友圈广告贡献了 50% 的新线索，但转化率低于整体水平；400 热线线索量少而质高，建议作为高意向渠道重点运营。</div>
+            <div class="sec-t">决策建议</div>
+            <div class="suggest-list" id="suggest-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-topics">
+      <div class="view-head">
+        <h1>内容选题库</h1>
+        <span class="sub">小红书 / 抖音爆款选题 · AI 热度分析</span>
+        <div class="spacer"></div>
+        <button class="btn ghost sm" onclick="toast('已更新今日爆款榜单')">刷新榜单</button>
+      </div>
+      <div class="toolbar">
+        <div class="filters" id="topic-filters">
+          <button class="filter active" data-f="all" onclick="setTopicFilter('all',this)">全部</button>
+          <button class="filter" data-f="xhs" onclick="setTopicFilter('xhs',this)">小红书</button>
+          <button class="filter" data-f="dy" onclick="setTopicFilter('dy',this)">抖音</button>
+        </div>
+        <div class="search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="topic-search" placeholder="搜索选题关键词" oninput="renderTopics()" aria-label="搜索选题"></div>
+      </div>
+      <div class="topic-grid" id="topic-grid"></div>
+    </section>
+
+    <section class="view" id="view-maker">
+      <div class="view-head">
+        <h1>内容制作</h1>
+        <span class="sub">AI 对话式创作 · 一键生成图文 / 口播脚本</span>
+        <div class="spacer"></div>
+        <button class="btn ghost sm" onclick="clearMaker()">清空对话</button>
+      </div>
+      <div class="maker-grid">
+        <div class="panel maker-chat">
+          <div class="thread-head">
+            <div class="nm">AI 内容助手 <small>基于太平洋知识库与爆款选题库</small></div>
+            <div class="st"><span class="dot"></span>随时待命</div>
+          </div>
+          <div class="msgs" id="maker-msgs"></div>
+          <div class="script-bar">
+            <button class="script-btn" onclick="quickMake('xhs')">写小红书笔记</button>
+            <button class="script-btn" onclick="quickMake('dy')">写抖音口播</button>
+            <button class="script-btn" onclick="quickMake('titles')">生成 10 个标题</button>
+          </div>
+          <div class="composer">
+            <input id="maker-input" placeholder="描述内容需求，例如：写一条 45 岁年金险科普笔记" aria-label="内容需求">
+            <button class="btn primary" onclick="sendMake()">生成</button>
+          </div>
+        </div>
+        <div class="agent-panel">
+          <div class="card">
+            <div class="card-head">内容设置</div>
+            <div class="card-body">
+              <div class="field" style="margin-bottom:10px"><label>发布平台</label><select id="mk-platform"><option>小红书</option><option>抖音</option></select></div>
+              <div class="field" style="margin-bottom:10px"><label>内容类型</label><select id="mk-type"><option>图文笔记</option><option>口播脚本</option><option>短视频文案</option></select></div>
+              <div class="field" style="margin-bottom:10px"><label>语言风格</label><select id="mk-style"><option>专业可信</option><option>亲和口语</option><option>轻松幽默</option></select></div>
+              <div class="field"><label>目标字数</label><select id="mk-len"><option>300 字以内</option><option>500 字左右</option><option>800 字以上</option></select></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">生成记录</div>
+            <div class="card-body" id="mk-history"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="view" id="view-published">
+      <div class="view-head">
+        <h1>已发布内容数据分析</h1>
+        <span class="sub">发布效果 · 互动表现 · 引流转化</span>
+        <div class="spacer"></div>
+        <button class="btn ghost sm" onclick="toast('已按近 30 天内容数据生成报告')">导出报告</button>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi"><div class="lab">已发布内容</div><div class="num" data-count="46">0</div><div class="delta">+8 篇 本月</div></div>
+        <div class="kpi"><div class="lab">总播放量</div><div class="num" data-count="128.6" data-dec="1">0</div><div class="delta">万次 · +23.5%</div></div>
+        <div class="kpi"><div class="lab">平均互动率</div><div class="num" data-count="6.8" data-dec="1">0</div><div class="delta">+1.2pct</div></div>
+        <div class="kpi"><div class="lab">引流线索</div><div class="num" data-count="312">0</div><div class="delta">+46 条 环比</div></div>
+        <div class="kpi"><div class="lab">线索转化率</div><div class="num" data-count="9.2" data-dec="1">0</div><div class="delta">+0.8pct</div></div>
+      </div>
+      <div class="insight-grid">
+        <div class="card wide">
+          <div class="card-head">内容表现排行</div>
+          <div class="card-body" style="padding:6px 8px">
+            <div class="table-wrap" style="box-shadow:none;border:none">
+              <table class="ch-table"><thead><tr><th>内容标题</th><th>平台</th><th>类型</th><th>播放</th><th>点赞</th><th>互动</th><th>引流线索</th><th>转化率</th><th>状态</th></tr></thead><tbody id="pub-tbody"></tbody></table>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">平台播放分布</div>
+          <div class="card-body"><div class="donut-wrap">
+            <div class="donut" id="pub-donut" role="img" aria-label="平台播放分布：抖音 56%，小红书 44%"><div class="hole"><span class="n">128.6</span><span class="t">万次</span></div></div>
+            <div class="legend" id="pub-donut-legend"></div>
+          </div></div>
+        </div>
+        <div class="card">
+          <div class="card-head">内容类型播放占比</div>
+          <div class="card-body" id="pub-type-chart"></div>
+        </div>
+        <div class="card wide">
+          <div class="card-head">近 30 天内容播放趋势（万次）</div>
+          <div class="card-body"><svg class="trend-svg" id="pub-trend-svg" viewBox="0 0 720 170" preserveAspectRatio="none" role="img" aria-label="近30天内容播放趋势折线图"></svg></div>
+        </div>
+        <div class="card wide">
+          <div class="card-head">AI 数据解读与建议</div>
+          <div class="card-body">
+            <div class="ai-box"><b>解读：</b>口播视频播放量最高（占比 46%），图文笔记互动率与收藏率领先；「45 岁投保」「父母保险」两个主题贡献了 52% 的引流线索。</div>
+            <div class="ai-box" style="margin-top:8px"><b>建议：</b>① 加大口播视频更新频率，延续强钩子开头；② 将高互动图文转成口播脚本二次发布；③ 对引流线索高的内容追加投放预算。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="view" id="view-compliance">
+      <div class="view-head">
+        <h1>保险合规中心</h1>
+        <span class="sub">条例查询 · 合规词库 · 发布前检测</span>
+        <div class="spacer"></div>
+        <button class="btn ghost sm" onclick="toast('合规库已更新至最新监管要求')">更新合规库</button>
+      </div>
+      <div class="toolbar">
+        <div class="search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="cmp-search" placeholder="搜索条例 / 合规词，例如：广告法、保本、收益" oninput="renderCompliance()" aria-label="搜索合规内容"></div>
+      </div>
+      <div class="insight-grid">
+        <div class="card">
+          <div class="card-head">高风险合规词库</div>
+          <div class="card-body" id="cmp-word-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">发布前合规检测</div>
+          <div class="card-body">
+            <textarea id="cmp-input" rows="4" style="width:100%;border:1px solid var(--line);border-radius:var(--r-md);padding:10px 12px;font-family:inherit;font-size:13px;resize:vertical;outline:none;background:var(--surface-2);box-sizing:border-box" placeholder="粘贴或输入要发布的文案，检测是否含禁用词 / 敏感词，例如：本产品稳赚不赔、保证收益"></textarea>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="btn primary" onclick="checkCompliance()">开始检测</button>
+              <button class="btn ghost" onclick="document.getElementById('cmp-input').value='';document.getElementById('cmp-result').innerHTML=''">清空</button>
+            </div>
+            <div id="cmp-result" style="margin-top:10px"></div>
+          </div>
+        </div>
+        <div class="card wide">
+          <div class="card-head">合规条例库</div>
+          <div class="card-body" style="padding:6px 8px">
+            <div class="table-wrap" style="box-shadow:none;border:none">
+              <table class="ch-table"><thead><tr><th>条例 / 办法</th><th>类别</th><th>关键词</th><th>要点</th><th>风险等级</th></tr></thead><tbody id="cmp-reg-tbody"></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- 创建线索 -->
+<div class="modal-mask" id="lead-modal">
+  <div class="modal">
+    <div class="modal-head"><h3>创建线索</h3><span class="ai-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>AI 已识别关键信息</span><button class="close" onclick="closeModal('lead-modal')" aria-label="关闭"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="modal-body"><div class="form-grid">
+      <div class="field"><label>姓名 <span class="ai-tag" id="t-ai-name">AI</span></label><input id="f-name"></div>
+      <div class="field"><label>联系电话 <span class="ai-tag" id="t-phone">AI</span></label><input id="f-phone"></div>
+      <div class="field"><label>投保意向 <span class="ai-tag" id="t-type">AI</span></label><input id="f-type"></div>
+      <div class="field"><label>预算范围 <span class="ai-tag" id="t-budget">AI</span></label><input id="f-budget"></div>
+      <div class="field"><label>投保时机 <span class="ai-tag" id="t-time">AI</span></label><input id="f-time"></div>
+      <div class="field"><label>健康告知 <span class="ai-tag" id="t-health">AI</span></label><input id="f-health"></div>
+      <div class="field"><label>线索来源</label><select id="f-source"><option>小红书</option><option>抖音</option></select></div>
+      <div class="field"><label>分配顾问</label><select id="f-owner"><option>张顾问</option><option>李顾问</option><option>王顾问</option><option>待分配</option></select></div>
+    </div></div>
+    <div class="modal-foot"><button class="btn ghost" onclick="closeModal('lead-modal')">取消</button><button class="btn primary" id="create-btn" onclick="createLead()">创建线索</button></div>
+  </div>
+</div>
+
+<!-- 创建销售记录 -->
+<div class="modal-mask" id="record-modal">
+  <div class="modal">
+    <div class="modal-head"><h3>创建销售记录</h3><span class="ai-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>AI 已生成</span><button class="close" onclick="closeModal('record-modal')" aria-label="关闭"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+    <div class="modal-body">
+      <div class="record-note"><b>沟通概况：</b>客户为制造行业家庭，45 岁，咨询年金险投保年龄问题，主动透露预算 1.5 万/年，健康告知正常，留资意愿强。</div>
+      <div class="record-note"><b>计划投保时间：</b>3 个月内</div>
+      <div class="record-note"><b>客户情感倾向：</b>积极，主动询问理赔流程并留下联系方式</div>
+      <div class="record-note"><b>待办事项：</b>今日致电介绍年金 50 万方案；发送产品对比表；预约家庭保障咨询</div>
+      <div class="record-note"><b>互动语料：</b>已自动归档本次会话全文，方便后续跟进与交接</div>
+    </div>
+    <div class="modal-foot"><button class="btn ghost" onclick="closeModal('record-modal')">取消</button><button class="btn primary" onclick="closeModal('record-modal');toast('销售记录已保存，已同步至客户档案')">保存记录</button></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ============ 数据 ============ */
+const leads = [
+  {id:'L-2681', name:'王丽', phone:'138****6688', type:'年金险', source:'小红书', score:84, status:'sql', owner:'张顾问', time:'今天 10:26'},
+  {id:'L-2680', name:'陈建', phone:'159****2311', type:'年金险', source:'抖音', score:77, status:'mql', owner:'李顾问', time:'今天 09:58'},
+  {id:'L-2679', name:'赵敏', phone:'137****9023', type:'年金险', source:'小红书', score:74, status:'mql', owner:'王顾问', time:'今天 09:31'},
+  {id:'L-2678', name:'刘洋', phone:'186****7755', type:'年金险', source:'抖音', score:61, status:'new', owner:'待分配', time:'昨天 21:14'},
+  {id:'L-2677', name:'孙洁', phone:'150****1122', type:'年金险', source:'小红书', score:52, status:'new', owner:'待分配', time:'昨天 18:40'},
+  {id:'L-2676', name:'周强', phone:'133****4455', type:'年金险', source:'抖音', score:47, status:'invalid', owner:'李顾问', time:'昨天 16:03'},
+];
+const convoList = [
+  {id:'202609018342', name:'王丽', src:'小红书', age:'45 岁', msg:'我想了解年金险，45岁还能买吗', score:84, chips:['年金险'], unread:false, active:true,
+   profile:['45 岁','深圳','家庭保障','年金险意向'],
+   summary:'<b>王丽，45 岁，深圳。</b>通过朋友圈广告进入官网，明确咨询年金险投保年龄问题，主动透露预算与健康状况，留资意愿强。',
+   hist:[['来源','小红书笔记引流'],['浏览产品页','年金险'],['停留时长','2 分 41 秒']],
+   product:'<b>年金险 50 万保额</b>',
+   goal:'确认投保年龄与费率约束，推荐组合方案，引导留资并预约顾问回电。',
+   script:[
+     {role:'v', text:'你好，我想了解年金险，45岁还能买吗？'},
+     {role:'a', text:'您好，可以的。45 岁投保年金险没有年龄障碍，只是保额上限和缴费期会比年轻时有约束，我可以按您的预算做一套方案。方便先了解下您的健康状况和大概预算吗？'},
+     {role:'v', text:'身体没什么大毛病，预算一年一万五左右吧'},
+     {role:'a', text:'好的，这个预算很合理。建议优先配置：年金险 50 万保额，年缴大概在 1.2 万到 1.5 万。像您这个年龄，越早投保费率越低，核保也更容易通过。'},
+     {role:'v', text:'理赔会不会很麻烦？'},
+     {role:'a', text:'理赔其实不复杂：确诊或住院后，联系您的专属顾问，我们协助收集资料、提交申请，资料齐全后一般 3 到 7 个工作日结案，全程有顾问跟进，不用自己跑流程。'},
+     {role:'a', text:'方便留下您的姓名和联系方式吗？我让顾问把详细方案和保费表发给您。'},
+     {role:'v', text:'我叫王丽，电话 138****6688'},
+     {role:'a', text:'收到，王女士。已为您预约顾问今日回电，稍后会把方案发到您微信，感谢信任！'}
+   ]},
+  {id:'202609018377', name:'陈建', src:'抖音', age:'38 岁', msg:'年金险和年金险哪个更合适', score:77, chips:['年金险'], unread:false,
+   profile:['38 岁','杭州','稳健理财','年金 + 年金险对比'],
+   summary:'<b>陈建，38 岁，杭州。</b>通过 400 热线咨询，关注长期储蓄与养老补充，倾向确定性收益。',
+   hist:[['来源','抖音视频引流'],['关注内容','年金 / 年金险'],['通话时长','6 分 20 秒']],
+   product:'<b>年金险 30 万</b> 或 年金险',
+   goal:'对比两类产品收益与灵活性，判断资金用途与缴费期，推荐合适产品并预约顾问。',
+   script:[
+     {role:'v', text:'年金险和年金险哪个更合适？'},
+     {role:'a', text:'两者都适合长期储蓄，区别在于：年金险退休后按月领取、专款专用；年金险更灵活，可部分减保取现。方便告诉我这笔钱主要想养老还是灵活备用吗？'},
+     {role:'v', text:'主要是养老补充，大概准备 30 万'},
+     {role:'a', text:'那年金险更匹配：现在 38 岁投保，60 岁起可稳定领取，还可以对接养老社区权益。我帮您预约顾问做一份领取演示表。'}
+   ]},
+  {id:'202609018374', name:'赵敏', src:'小红书', age:'33 岁', msg:'年金险的免赔额是多少', score:74, chips:['年金险'], unread:true,
+   profile:['33 岁','广州','上班族','年金险对比'],
+   summary:'<b>赵敏，33 岁，广州。</b>企业微信咨询年金险免赔额与续保条件，关注性价比。',
+   hist:[['来源','小红书笔记引流'],['关注内容','年金险'],['历史会话','2 次']],
+   product:'<b>年金险险</b>（1 万免赔 / 保证续保 20 年）',
+   goal:'讲清免赔额与续保条款，对比 2 到 3 款产品，引导留资获取方案。',
+   script:[
+     {role:'v', text:'年金险的免赔额是多少？'},
+     {role:'a', text:'主流产品一般 1 万免赔额，超过部分按比例报销；部分产品支持家庭共享免赔额。您更看重价格还是长期续保稳定？'},
+     {role:'v', text:'续保稳定更重要'},
+     {role:'a', text:'那建议选保证续保 20 年的产品，我整理两款对比表发您参考。方便加个微信接收吗？'}
+   ]},
+  {id:'202609018361', name:'刘洋', src:'抖音', age:'31 岁', msg:'给孩子买年金怎么选', score:61, chips:['年金险'], unread:true,
+   profile:['31 岁','成都','新手父母','年金险'],
+   summary:'<b>刘洋，31 岁，成都。</b>直播弹幕咨询年金险，关注保额与预算，线索较早期。',
+   hist:[['来源','抖音直播引流'],['关注内容','年金险'],['互动','弹幕咨询']],
+   product:'<b>年金险 50 万</b>（含少儿特定疾病）',
+   goal:'介绍年金险要点与预算范围，引导进入企微详聊。',
+   script:[
+     {role:'v', text:'给孩子买年金怎么选？'},
+     {role:'a', text:'主要看三点：保额建议 50 万起、是否覆盖少儿高发疾病、预算控制在家庭年收入 5% 以内。方便说说孩子年龄和大概预算吗？'}
+   ]},
+  {id:'202609018352', name:'孙洁', src:'小红书', age:'29 岁', msg:'年金险一年多少钱', score:52, chips:['年金险'], unread:false,
+   profile:['29 岁','重庆','职场新人','年金险询价'],
+   summary:'<b>孙洁，29 岁，重庆。</b>朋友圈广告点击进入，咨询年金险价格，意向偏早期。',
+   hist:[['来源','小红书笔记引流'],['关注内容','年金险'],['访问','落地页停留 45 秒']],
+   product:'<b>综合年金险</b>（50 万保额 / 年缴百元级）',
+   goal:'说明年金险性价比，按职业风险推荐，引导留资或企微咨询。',
+   script:[
+     {role:'v', text:'年金险一年多少钱？'},
+     {role:'a', text:'综合年金险很划算：50 万保额一年通常 150 到 300 元，含身故保障与年金领取。您平时是办公室工作还是经常出差？'}
+   ]},
+  {id:'202609018345', name:'吴女士', src:'小红书', age:'41 岁', msg:'想问一下年金保额买多少合适', score:71, chips:['年金险'], unread:true,
+   profile:['41 岁','南京','家庭保障','年金保额规划'],
+   summary:'<b>吴女士，41 岁，南京。</b>小红书笔记引流，咨询年金保额选择，关注家庭整体保障。',
+   hist:[['来源','小红书笔记引流'],['关注内容','年金保额'],['停留时长','1 分 18 秒']],
+   product:'<b>年金险</b>（保额 50 万 起）',
+   goal:'讲解保额确定方法（年收入 3 到 5 倍法则），推荐保额与预算组合，引导留资。',
+   script:[
+     {role:'v', text:'想问一下年金保额买多少合适？'},
+     {role:'a', text:'一般建议按年收入的 3 到 5 倍配置，比如年收入 20 万，年金保额 60 万到 100 万比较稳妥。方便告诉我您的大概年收入和已有保障吗？'}
+   ]}
+];
+const channels = [
+  {name:'400 热线', leads:42, mql:17, rate:40.5, color:'#2E86FF'},
+  {name:'官网表单', leads:96, mql:37, rate:38.5, color:'#4D9BFF'},
+  {name:'企业微信', leads:54, mql:18, rate:33.3, color:'#6FB2FF'},
+  {name:'直播', leads:38, mql:8, rate:21.1, color:'#5BBEFF'},
+  {name:'朋友圈广告', leads:38, mql:7, rate:18.4, color:'#9CCBFF'},
+];
+const types = [
+  {name:'年金险', pct:100, color:'#2E86FF'},
+];
+const reasons = [
+  {name:'联系不上', pct:38, color:'#E05A52'},
+  {name:'预算不符', pct:29, color:'#5BBEFF'},
+  {name:'健康告知不符', pct:18, color:'#6FB2FF'},
+  {name:'重复线索', pct:9, color:'#CBDFF7'},
+  {name:'其他', pct:6, color:'#9CCBFF'},
+];
+const trend = [38,42,40,47,45,52,49,56,54,61,58,66,63,60,69,65,72,70,77,74,71,79,76,83,80,86,84,91,88,96];
+const suggests = [
+  {t:'提升 400 热线承接效率', p:'400 渠道转化率 40.5% 显著领先，建议缩短热线转 SDR 的响应时间至 5 分钟内。'},
+  {t:'优化朋友圈广告人群定向', p:'线索量占比高但转化仅 18.4%，建议聚焦 40 至 55 岁家庭保障人群，并优化落地页。'},
+  {t:'建立健康告知不符培育池', p:'18% 的退回线索属于健康告知不符，建议进入次年复审培育池，由 AI 定期温和触达。'},
+];
+
+/* ============ 工具 ============ */
+const $ = s => document.querySelector(s);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, reduceMotion ? 0 : ms));
+
+function icon(name){
+  const p = {
+    shield:'<path d="M12 2.6 4.2 5.6v5.1c0 4.8 3.3 9.3 7.8 10.7 4.5-1.4 7.8-5.9 7.8-10.7V5.6L12 2.6z"/>',
+    check:'<path d="M20 6 9 17l-5-5"/>',
+  };
+  return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (p[name]||'') + '</svg>';
+}
+
+/* ============ 视图 ============ */
+function switchView(name){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item[data-view]').forEach(n => n.classList.toggle('active', n.dataset.view === name));
+  $('#view-' + name).classList.add('active');
+  if(name === 'insight') renderInsights();
+  if(name === 'leads') renderLeads();
+  if(name === 'topics') renderTopics();
+  if(name === 'maker') setTimeout(() => { const el = $('#maker-input'); if(el) el.focus(); }, 120);
+  if(name === 'published') renderPublished();
+  if(name === 'compliance') renderCompliance();
+}
+
+/* ============ 会话列表 ============ */
+function renderConvoList(){
+  $('#convo-list').innerHTML = convoList.map((c,i) =>
+    '<button class="convo' + (c.active ? ' active' : '') + '" onclick="selectConvo(' + i + ')" aria-label="查看会话：' + c.name + '">' +
+      '<div class="ava">' + c.name[0] + '</div>' +
+      '<div class="meta">' +
+        '<div class="top"><span class="nm">' + c.name + '</span><span class="tm">10:0' + (1 + c.score % 9) + '</span></div>' +
+        '<div class="msg">' + c.msg + '</div>' +
+      '</div>' +
+    '</button>').join('');
+}
+
+/* ============ 会话模拟 ============ */
+let chatBusy = false, curConvo = 0;
+let playSeq = 0, manualResolver = null, draftResolvers = [];
+
+function addMsg(role, text, meta){
+  const el = document.createElement('div');
+  el.className = 'msg ' + role;
+  el.innerHTML = text + (meta ? '<span class="meta">' + meta + '</span>' : '');
+  $('#msgs').appendChild(el);
+  $('#msgs').scrollTop = $('#msgs').scrollHeight;
+}
+
+async function typeMsg(role, text, meta, seq){
+  const tip = document.createElement('div');
+  tip.className = 'msg ' + (role === 'v' ? 'v' : 'a');
+  tip.innerHTML = '<span class="typing"><i></i><i></i><i></i></span>';
+  $('#msgs').appendChild(tip);
+  $('#msgs').scrollTop = $('#msgs').scrollHeight;
+  await sleep(850);
+  tip.remove();
+  if(seq !== undefined && seq !== playSeq) return;
+  addMsg(role, text, meta);
+}
+
+function selectConvo(i){
+  curConvo = i;
+  convoList.forEach((c, idx) => c.active = idx === i);
+  renderConvoList();
+  const c = convoList[i];
+  $('#t-name').textContent = c.name;
+  $('#t-src').textContent = c.src;
+  $('#t-age').textContent = c.age;
+  renderProfile(c);
+  playConvo(i);
+}
+
+async function playConvo(i){
+  const seq = ++playSeq;
+  chatBusy = true;
+  abortPendingDrafts();
+  const c = convoList[i];
+  $('#msgs').innerHTML = '';
+  renderProfile(c);
+  const msgs = c.script || [];
+  for(let k = 0; k < msgs.length; k++){
+    if(seq !== playSeq) break;
+    const m = msgs[k];
+    if(m.role === 'v'){
+      await sleep(420);
+      if(seq !== playSeq) break;
+      await typeMsg('v', m.text, '访客 · 刚刚', seq);
+    } else {
+      await sleep(380);
+      if(seq !== playSeq) break;
+      const act = await showAiDraft(m.text);
+      if(act === 'abort' || seq !== playSeq) break;
+    }
+  }
+  if(seq !== playSeq) return;
+  chatBusy = false;
+  if(i === 0){
+    await sleep(420);
+    const b = document.querySelector('#view-chat .func-bubble:nth-child(3)');
+    b.classList.add('pulse-ring');
+    toast('AI 已识别关键信息，点击「创建线索」一键建档');
+    setTimeout(() => b.classList.remove('pulse-ring'), 4600);
+  }
+}
+
+function abortPendingDrafts(){
+  const rs = draftResolvers.splice(0);
+  rs.forEach(r => r('abort'));
+  if(manualResolver){ const r = manualResolver; manualResolver = null; r('abort'); }
+}
+
+function showAiDraft(text){
+  return new Promise(resolve => {
+    const el = document.createElement('div');
+    el.className = 'draft-card';
+    el.innerHTML =
+      '<div class="dc-top"><span class="ic"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.8 4.4 5.8v5c0 4.6 3.2 9 7.6 10.4 4.4-1.4 7.6-5.8 7.6-10.4v-5L12 2.8z"/><path d="M9 11.8l2.2 2.2 3.8-4"/></svg></span>AI 建议话术<span class="pending">待人工确认</span></div>' +
+      '<div class="dc-body"></div>' +
+      '<div class="dc-foot"><button class="btn ghost sm" data-act="edit">编辑</button><button class="btn primary sm" data-act="send">确认发送</button></div>' +
+      '<div class="dc-note">' + icon('shield') + '合规设置：AI 内容需人工审核确认后发送</div>';
+    el.querySelector('.dc-body').textContent = text;
+    $('#msgs').appendChild(el);
+    $('#msgs').scrollTop = $('#msgs').scrollHeight;
+    let settled = false;
+    const settle = how => {
+      if(settled) return;
+      settled = true;
+      const i = draftResolvers.indexOf(settle);
+      if(i >= 0) draftResolvers.splice(i, 1);
+      el.remove();
+      resolve(how);
+    };
+    draftResolvers.push(settle);
+    el.querySelector('[data-act="send"]').onclick = () => {
+      addMsg('a', text, '顾问 · 刚刚');
+      toast('AI 话术已确认，以顾问身份发送给客户');
+      settle('sent');
+    };
+    el.querySelector('[data-act="edit"]').onclick = () => {
+      el.remove();
+      const input = $('#chat-input');
+      input.value = text;
+      input.focus();
+      toast('已放入输入框，请审核修改后按发送键发出');
+      manualResolver = how => { manualResolver = null; settle(how || 'edited'); };
+    };
+  });
+}
+
+function restartDemo(){ selectConvo(0); }
+
+function renderProfile(c){
+  $('#p-chips').innerHTML = c.profile.map(x => '<span class="chip' + (x.indexOf('意向') >= 0 ? ' blue' : '') + '">' + x + '</span>').join('');
+  $('#p-summary').innerHTML = c.summary;
+  $('#p-hist').innerHTML = c.hist.map(([k,v]) => '<div class="kv"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>').join('');
+  $('#p-product').innerHTML = c.product;
+  $('#p-goal').textContent = c.goal;
+  const sc = c.score;
+  renderScore(sc, Math.min(99, Math.round(sc * 0.88)), Math.min(99, Math.round(sc * 1.02)), Math.round(sc * 0.78), Math.round(sc * 0.98));
+}
+
+function renderScore(total, budget, need, auth, time){
+  $('#score-num').textContent = total;
+  $('#score-pill').textContent = total + ' 分';
+  $('#score-pill').className = 'score-pill ' + (total >= 70 ? 'high' : total >= 50 ? 'mid' : 'low');
+  $('#b-budget').textContent = budget; $('#f-budget').style.width = budget + '%';
+  $('#b-need').textContent = need; $('#f-need').style.width = need + '%';
+  $('#b-auth').textContent = auth; $('#f-auth').style.width = auth + '%';
+  $('#b-time').textContent = time; $('#f-time').style.width = time + '%';
+  const bant = Math.round((budget + need + auth + time) / 4);
+  $('#bant-total').textContent = bant;
+  const spin = Math.min(100, bant + 2);
+  $('#spin-total').textContent = spin;
+}
+
+function toggleScore(id){
+  const el = document.getElementById(id);
+  if(el) el.classList.toggle('open');
+}
+
+function sendInput(){
+  const input = $('#chat-input');
+  const text = input.value.trim();
+  if(!text) return;
+  addMsg('a', text, '顾问 · 刚刚');
+  input.value = '';
+  if(manualResolver){ const r = manualResolver; manualResolver = null; r(); }
+}
+
+/* ============ 线索中心 ============ */
+let leadFilter = 'all';
+const statusMap = {sql:'SQL', mql:'MQL', new:'新线索', invalid:'无效'};
+function statusChip(s){ return '<span class="status-chip ' + s + '">' + statusMap[s] + '</span>'; }
+
+function renderLeads(){
+  const q = ($('#lead-search').value || '').trim().toLowerCase();
+  const rows = leads.filter(l => {
+    const okF = leadFilter === 'all' || l.status === leadFilter;
+    const okQ = !q || (l.name + l.phone + l.type).toLowerCase().includes(q);
+    return okF && okQ;
+  });
+  $('#lead-tbody').innerHTML = rows.length ? rows.map(l =>
+    '<tr>' +
+      '<td><div class="who">' + l.name + '</div><div class="sub">' + l.phone + '</div></td>' +
+      '<td>' + l.type + '</td><td>' + l.source + '</td>' +
+      '<td><span class="score-pill ' + (l.score >= 70 ? 'high' : l.score >= 50 ? 'mid' : 'low') + '">' + l.score + '</span></td>' +
+      '<td>' + statusChip(l.status) + '</td>' +
+      '<td>' + l.owner + '</td><td class="muted">' + l.time + '</td>' +
+    '</tr>').join('') : '<tr><td colspan="7"><div style="padding:30px;text-align:center;color:var(--ink-3)">没有匹配的线索，试试调整筛选条件</div></td></tr>';
+}
+
+function setLeadFilter(f, el){
+  leadFilter = f;
+  document.querySelectorAll('#lead-filters .filter').forEach(x => x.classList.remove('active'));
+  el.classList.add('active');
+  renderLeads();
+}
+
+/* ============ 弹窗 ============ */
+function openModal(id){ $('#' + id).classList.add('open'); }
+function closeModal(id){ $('#' + id).classList.remove('open'); }
+
+function openLeadModal(){
+  openModal('lead-modal');
+  document.querySelectorAll('#lead-modal input').forEach(i => { i.value = ''; i.classList.remove('filled'); });
+  document.querySelectorAll('#lead-modal .ai-tag').forEach(t => t.classList.remove('on'));
+  autofill();
+}
+
+async function autofill(){
+  const fields = [
+    ['f-name','王丽','t-ai-name'], ['f-phone','138****6688','t-phone'],
+    ['f-type','年金险 50 万 + 年金险','t-type'], ['f-budget','年缴 1.2 - 1.5 万','t-budget'],
+    ['f-time','3 个月内','t-time'], ['f-health','健康告知正常','t-health'],
+  ];
+  for(const [id, val, tag] of fields){
+    await sleep(360);
+    const el = document.getElementById(id);
+    el.value = val;
+    el.classList.add('filled');
+    document.getElementById(tag).classList.add('on');
+  }
+}
+
+function createLead(){
+  const name = $('#f-name').value || '新客户';
+  leads.unshift({id:'L-' + (2682 + leads.length), name, phone:$('#f-phone').value || '待补充', type:$('#f-type').value || '待确认', source:$('#f-source').value, score:84, status:'new', owner:$('#f-owner').value, time:'刚刚'});
+  closeModal('lead-modal');
+  toast('线索已创建：' + name + '，已分配至 ' + $('#f-owner').value);
+  if(leadFilter !== 'all'){ leadFilter = 'all'; document.querySelectorAll('#lead-filters .filter').forEach(x => x.classList.toggle('active', x.dataset.f === 'all')); }
+  renderLeads();
+}
+
+function openRecordModal(){ openModal('record-modal'); }
+
+/* ============ 洞察 ============ */
+function countUp(el, target, dec){
+  const dur = reduceMotion ? 0 : 850;
+  const t0 = performance.now();
+  function tick(t){
+    const p = Math.min(1, (t - t0) / dur);
+    const v = target * (1 - Math.pow(1 - p, 3));
+    el.textContent = dec ? v.toFixed(dec) : Math.round(v).toLocaleString();
+    if(p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function renderInsights(){
+  document.querySelectorAll('[data-count]').forEach(el => {
+    countUp(el, parseFloat(el.dataset.count), parseInt(el.dataset.dec || '0', 10));
+  });
+  renderChannels();
+  renderDonut();
+  renderReasons();
+  renderTrend();
+  renderSuggests();
+}
+
+function renderChannels(){
+  const max = Math.max(...channels.map(c => c.leads));
+  $('#channel-tbody').innerHTML = channels.map(c =>
+    '<tr><td>' + c.name + '</td><td class="mono">' + c.leads + '</td><td class="mono">' + c.mql + '</td>' +
+    '<td><div class="bar"><i data-w="' + (c.leads / max * 100) + '%" style="background:' + c.color + '"></i></div><div class="mono small" style="margin-top:3px">' + c.rate + '%</div></td></tr>').join('');
+  requestAnimationFrame(() => setTimeout(() => {
+    document.querySelectorAll('#channel-tbody .bar i').forEach(i => i.style.width = i.dataset.w);
+  }, 60));
+}
+
+function renderDonut(){
+  let acc = 0;
+  const segs = types.map(t => { const from = acc; acc += t.pct; return t.color + ' ' + from + '% ' + acc + '%'; }).join(', ');
+  $('#donut').style.background = 'conic-gradient(' + segs + ')';
+  $('#donut-legend').innerHTML = types.map(t =>
+    '<div class="row"><span class="sw" style="background:' + t.color + '"></span>' + t.name + '<span class="pct">' + t.pct + '%</span></div>').join('');
+}
+
+function renderReasons(){
+  const max = Math.max(...reasons.map(r => r.pct));
+  $('#reason-chart').innerHTML = reasons.map(r =>
+    '<div style="display:grid;grid-template-columns:110px 1fr 44px;gap:10px;align-items:center;margin:9px 0;font-size:12px">' +
+      '<span style="color:var(--ink-2)">' + r.name + '</span>' +
+      '<span class="track"><span class="fill" style="background:' + r.color + '" data-w="' + (r.pct / max * 100) + '%"></span></span>' +
+      '<span class="mono" style="text-align:right;font-weight:700">' + r.pct + '%</span>' +
+    '</div>').join('');
+  requestAnimationFrame(() => setTimeout(() => {
+    document.querySelectorAll('#reason-chart .fill').forEach(f => f.style.width = f.dataset.w);
+  }, 60));
+}
+
+function renderTrend(){
+  const w = 720, h = 170, pad = 10;
+  const min = Math.min(...trend), max = Math.max(...trend);
+  const pts = trend.map((v, i) => {
+    const x = pad + i * (w - pad * 2) / (trend.length - 1);
+    const y = h - pad - (v - min) / (max - min) * (h - pad * 2);
+    return [x, y];
+  });
+  const line = pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const area = 'M' + pts[0][0].toFixed(1) + ',' + (h - pad).toFixed(1) + ' L' + line.split(' ').join(' L') + ' L' + pts[pts.length-1][0].toFixed(1) + ',' + (h - pad).toFixed(1) + ' Z';
+  $('#trend-svg').innerHTML =
+    '<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#2E86FF" stop-opacity=".22"/><stop offset="1" stop-color="#2E86FF" stop-opacity="0"/></linearGradient></defs>' +
+    '<path d="' + area + '" fill="url(#tg)"/>' +
+    '<polyline points="' + line + '" fill="none" stroke="#2E86FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<circle cx="' + pts[pts.length-1][0].toFixed(1) + '" cy="' + pts[pts.length-1][1].toFixed(1) + '" r="4" fill="#5BBEFF" stroke="#fff" stroke-width="2"/>';
+}
+
+function renderSuggests(){
+  $('#suggest-list').innerHTML = suggests.map(s =>
+    '<div class="suggest"><div><b>' + s.t + '</b><p>' + s.p + '</p></div></div>').join('');
+}
+
+
+/* ============ 内容选题库 ============ */
+const topics = [
+  {platform:'xhs', cat:'保险科普', title:'45岁买年金险还来得及吗？一张图看懂年龄和保费的关系', likes:'1.2万', saves:'8.6千', comments:342, heat:96, up:true, ai:'命中「中年投保」热点，近 7 天搜索上涨 32%'},
+  {platform:'xhs', cat:'产品解读', title:'年金险和年金险到底先买哪个？别再被销售绕晕', likes:'9864', saves:'7.2千', comments:286, heat:94, up:true, ai:'对比类选题互动率高，收藏比优'},
+  {platform:'xhs', cat:'理赔知识', title:'理赔被拒的 5 个原因，买保险前一定要知道', likes:'8130', saves:'6.4千', comments:198, heat:92, up:false, ai:'知识清单体，长尾流量稳定'},
+  {platform:'dy', cat:'理赔知识', title:'口播｜保险公司拒赔的 3 个真实案例，教你避坑', likes:'3.1万', saves:'5.8千', comments:612, heat:98, up:true, ai:'强钩子开头，预估完播率高于 85%'},
+  {platform:'dy', cat:'家庭保障', title:'父母 50 岁还能买什么保险？这套配置方案请收好', likes:'2.4万', saves:'9.1千', comments:430, heat:95, up:true, ai:'「给父母买保险」话题热度持续走高'},
+  {platform:'xhs', cat:'家庭保障', title:'年缴 1.5 万，我给全家配齐了保障（附清单）', likes:'1.6万', saves:'1.2万', comments:354, heat:93, up:true, ai:'清单体笔记收藏率极高，适合带货转化'},
+  {platform:'dy', cat:'保险科普', title:'年金保额怎么定？年收入 5 倍法则靠谱吗', likes:'1.8万', saves:'4.9千', comments:268, heat:90, up:false, ai:'知识科普类流量稳定，适合常青内容'},
+  {platform:'dy', cat:'家庭保障', title:'新生儿保险怎么买？儿科顾问的 3 条避坑建议', likes:'2.1万', saves:'8.7千', comments:389, heat:91, up:true, ai:'母婴话题带流量，评论区咨询率高'},
+];
+let topicFilter = 'all';
+function setTopicFilter(f, el){
+  topicFilter = f;
+  document.querySelectorAll('#topic-filters .filter').forEach(x => x.classList.remove('active'));
+  el.classList.add('active');
+  renderTopics();
+}
+function renderTopics(){
+  const q = ($('#topic-search').value || '').trim().toLowerCase();
+  const rows = topics.map((t,i) => ({t,i})).filter(({t}) =>
+    (topicFilter === 'all' || t.platform === topicFilter) &&
+    (!q || t.title.toLowerCase().includes(q) || t.cat.includes(q)));
+  $('#topic-grid').innerHTML = rows.length ? rows.map(({t,i}) =>
+    '<div class="topic-card">' +
+      '<div class="tc-top"><span class="chip ' + (t.platform === 'xhs' ? 'blue' : '') + '">' + (t.platform === 'xhs' ? '小红书' : '抖音') + '</span><span class="chip">' + t.cat + '</span><span class="tc-heat">爆款 ' + t.heat + '</span></div>' +
+      '<h3>' + t.title + '</h3>' +
+      '<div class="tc-meta"><span>赞 ' + t.likes + '</span><span>藏 ' + t.saves + '</span><span>评 ' + t.comments + '</span><span class="' + (t.up ? 'up' : '') + '">' + (t.up ? '热度 ↑' : '热度 →') + '</span></div>' +
+      '<div class="ai-tip" style="padding:7px 10px;font-size:11.5px;margin:0"><span>AI 分析：' + t.ai + '</span></div>' +
+      '<div class="tc-actions"><button class="btn sm soft" onclick="adoptTopic(' + i + ')">采用选题</button><button class="btn sm ghost" onclick="goMaker(' + i + ')">生成内容</button></div>' +
+    '</div>').join('') : '<div class="empty">没有匹配的选题，换个关键词试试</div>';
+}
+function adoptTopic(i){ toast('已加入选题清单：' + topics[i].title.slice(0, 18) + '…'); }
+function goMaker(i){
+  const t = topics[i];
+  switchView('maker');
+  $('#maker-input').value = '基于选题「' + t.title.slice(0, 22) + '…」写一条' + (t.platform === 'xhs' ? '小红书' : '抖音') + '内容';
+  sendMake();
+}
+
+/* ============ 内容制作（AI 聊天） ============ */
+const mkHistory = [];
+function addMakeMsg(role, html){
+  const el = document.createElement('div');
+  el.className = role === 'v' ? 'msg v' : 'made';
+  el.innerHTML = html + (role === 'v' ? '<span class="meta">我 · 刚刚</span>' : '');
+  $('#maker-msgs').appendChild(el);
+  $('#maker-msgs').scrollTop = $('#maker-msgs').scrollHeight;
+}
+async function aiType(){
+  const tip = document.createElement('div');
+  tip.className = 'msg a';
+  tip.innerHTML = '<span class="typing"><i></i><i></i><i></i></span>';
+  $('#maker-msgs').appendChild(tip);
+  $('#maker-msgs').scrollTop = $('#maker-msgs').scrollHeight;
+  await sleep(1100);
+  tip.remove();
+}
+function makeContent(input){
+  const s = input.toLowerCase();
+  const plat = $('#mk-platform').value, type = $('#mk-type').value, style = $('#mk-style').value;
+  const note = '已按「' + plat + ' · ' + type + ' · ' + style + '」生成';
+  if(s.includes('抖音') || s.includes('口播') || plat === '抖音'){
+    return {title:'45岁还能买年金险吗？这3个真相你必须知道', body:'【开头钩子】45 岁想买年金险，结果发现保额被限、保费还贵？\n\n【正文】第一，45 岁投保保额通常上限 50 万；第二，缴费期只能选 10 或 15 年；第三，越早投保，每年省下 10% 到 20% 的保费。\n\n【结尾】想知道自己能买多少保额？评论区扣「1」，顾问帮你免费测算。', tags:['#年金险','#保险科普','#45岁投保','#家庭保障'], score:93, note};
+  }
+  if(s.includes('标题')){
+    return {title:'10 个高点击标题（年金险科普）', body:'1. 45 岁买年金险，晚一年贵多少钱？\n2. 年金险和年金险，先买哪个？\n3. 理赔被拒的 5 个原因\n4. 年缴 1.5 万，我这样给全家配齐保障\n5. 父母 50 岁还能买什么保险？\n6. 保额怎么定？年收入 5 倍法则\n7. 新生儿年金险避坑指南\n8. 年金险的「坑」，销售不会告诉你\n9. 45 岁投保，健康告知要注意什么\n10. 一文看懂年金险缴费期怎么选', tags:['#年金险','#选题库'], score:88, note};
+  }
+  return {title:'45岁买年金险还来得及吗？聊聊年龄和保费的真相', body:'45 岁想买年金险，别被「太晚了」劝退。\n\n这年龄确实有约束：保额上限通常 50 万，缴费期 10 到 15 年，保费比 30 岁贵约三成。但只要健康告知没问题，依然值得配置：年金 50 万 + 年金险，年缴 1.2 到 1.5 万就能搭好基础保障。\n\n越早投保，费率越低、核保越容易通过。如果你也在纠结，评论区留下年龄，我帮你看看适合的方案。', tags:['#年金险','#保险科普','#45岁投保','#家庭保障'], score:92, note};
+}
+function renderMade(res){
+  return '<div class="mk-title">' + res.title + '</div>' +
+    '<div class="mk-body">' + res.body + '</div>' +
+    (res.tags && res.tags.length ? '<div class="mk-tags">' + res.tags.map(t => '<span>' + t + '</span>').join('') + '</div>' : '') +
+    '<div class="mk-foot"><span>预计爆款指数 <b>' + res.score + '</b></span><span>' + res.note + '</span></div>';
+}
+async function sendMake(){
+  const input = $('#maker-input');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  addMakeMsg('v', text);
+  await aiType();
+  const res = makeContent(text);
+  addMakeMsg('a', renderMade(res));
+  const now = new Date();
+  mkHistory.unshift({title: res.title, tm: String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0')});
+  renderMkHistory();
+}
+function quickMake(kind){
+  const map = {xhs:'写一条小红书年金险科普笔记，语气亲和', dy:'写一条抖音口播脚本，讲 45 岁年金险投保，要有钩子', titles:'生成 10 个年金险科普标题'};
+  $('#maker-input').value = map[kind];
+  sendMake();
+}
+function clearMaker(){
+  $('#maker-msgs').innerHTML = '';
+  addMakeMsg('a', '你好，我是 AI 内容助手。描述你的需求，我可以生成小红书图文、抖音口播脚本或标题列表。');
+}
+function renderMkHistory(){
+  $('#mk-history').innerHTML = mkHistory.length ? mkHistory.map(h =>
+    '<div class="mk-his"><span class="t">' + h.title + '</span><span class="tm">' + h.tm + '</span></div>').join('') : '<div class="small muted">还没有生成记录</div>';
+}
+
+
+/* ============ AI 分析标签页 + 话术 ============ */
+const aiScripts = [
+  {tag:'解答', title:'45 岁投保说明', text:'您好，45 岁投保年金险没有年龄障碍，只是保额上限和缴费期会比年轻时有约束。方便先了解下您的健康状况和大概预算吗？'},
+  {tag:'异议', title:'理赔担忧回应', text:'关于理赔您可以放心：确诊或住院后联系专属顾问，我们协助收集资料、提交申请，资料齐全后一般 3 到 7 个工作日结案，全程有人跟进。'},
+  {tag:'留资', title:'索要联系方式', text:'方便留下您的姓名和联系方式吗？我让顾问把年金 50 万 + 年金险的方案和保费表发给您，并预约一次电话沟通。'},
+  {tag:'方案', title:'组合方案推荐', text:'结合您的预算，建议优先配置：年金险 50 万保额，年缴 1.2 万到 1.5 万，保障更完整。'}
+];
+let aiScriptsOrder = [0, 1, 2, 3];
+function renderScripts(){
+  $('#script-pane').innerHTML = aiScriptsOrder.map(idx => {
+    const sc = aiScripts[idx];
+    return '<div class="script-item">' +
+      '<span class="tag">' + sc.tag + '</span>' +
+      '<span style="flex:1;min-width:0"><b>' + sc.title + '</b>' + sc.text.slice(0, 26) + '…</span>' +
+      '<button class="script-move" title="放入左侧输入框" aria-label="放入左侧输入框" onclick=\'fillComposer(' + JSON.stringify(sc.text) + ')\'>' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>' +
+      '</button></div>';
+  }).join('');
+}
+
+function toggleScripts(){
+  const wrap = document.getElementById('script-wrap');
+  const show = wrap.style.display !== 'block';
+  wrap.style.display = show ? 'block' : 'none';
+  if(show) renderScripts();
+}
+
+function openScripts(){
+  const tabBtn = document.querySelector('.agent-tabs button:nth-child(2)');
+  if(tabBtn) switchAiTab('scripts', tabBtn);
+  renderScripts();
+}
+function sendAiAsk(){
+  const input = $('#ai-input');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  addMsg('a', '收到：' + text + '。已结合客户画像分析，建议参考「AI 话术」中的推荐内容，可在左侧编辑后发送给客户。');
+}
+function regenerateScripts(){
+  aiScriptsOrder = [aiScriptsOrder[1], aiScriptsOrder[3], aiScriptsOrder[0], aiScriptsOrder[2]];
+  renderScripts();
+  toast('已根据客户画像重新生成话术');
+}
+function fillComposer(text){
+  const input = $('#chat-input');
+  input.value = text;
+  input.focus();
+  input.scrollIntoView({ block: 'nearest' });
+  toast('话术已放入输入框，可编辑后发送');
+}
+function switchAiTab(name, btn){
+  document.querySelectorAll('#pane-profile, #pane-scripts').forEach(p => p.classList.toggle('on', p.id === 'pane-' + name));
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === btn));
+  if(name === 'scripts') renderScripts();
+}
+
+
+/* ============ 已发布内容数据分析 ============ */
+const pubContents = [
+  {title:'45岁还能买年金险吗？这3个真相你必须知道', plat:'抖音', type:'口播视频', play:'32.1万', like:'2.4万', cmt:'612', fav:'5.8千', leads:86, rate:4.2, st:'推广中'},
+  {title:'45岁买年金险还来得及吗？一张图看懂年龄和保费', plat:'小红书', type:'图文笔记', play:'18.6万', like:'1.2万', cmt:'342', fav:'8.6千', leads:74, rate:5.1, st:'推广中'},
+  {title:'父母 50 岁还能买什么保险？这套配置方案请收好', plat:'抖音', type:'口播视频', play:'24.8万', like:'2.4万', cmt:'430', fav:'9.1千', leads:68, rate:3.9, st:'推广中'},
+  {title:'理赔被拒的 5 个原因，买保险前一定要知道', plat:'小红书', type:'图文笔记', play:'12.3万', like:'8130', cmt:'198', fav:'6.4千', leads:52, rate:6.8, st:'已结束'},
+  {title:'年缴 1.5 万，我给全家配齐了保障（附清单）', plat:'小红书', type:'图文笔记', play:'15.2万', like:'1.6万', cmt:'354', fav:'1.2万', leads:32, rate:2.8, st:'已结束'},
+];
+const pubTrend = [12,18,22,19,26,31,28,36,33,41,38,46,52,49,57,54,62,59,68,64,71,67,75,72,80,78,85,82,90,96];
+const pubPlatforms = [{name:'抖音', pct:56, color:'#2E86FF'},{name:'小红书', pct:44, color:'#5BBEFF'}];
+const pubTypes = [{name:'口播视频', pct:46, color:'#2E86FF'},{name:'图文笔记', pct:34, color:'#6FB2FF'},{name:'直播切片', pct:12, color:'#5BBEFF'},{name:'图文海报', pct:8, color:'#9CCBFF'}];
+function renderTrendIn(id, data){
+  const w = 720, h = 170, pad = 10;
+  const min = Math.min(...data), max = Math.max(...data);
+  const pts = data.map((v, i) => {
+    const x = pad + i * (w - pad * 2) / (data.length - 1);
+    const y = h - pad - (v - min) / (max - min) * (h - pad * 2);
+    return [x, y];
+  });
+  const line = pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const area = 'M' + pts[0][0].toFixed(1) + ',' + (h - pad).toFixed(1) + ' L' + line.split(' ').join(' L') + ' L' + pts[pts.length-1][0].toFixed(1) + ',' + (h - pad).toFixed(1) + ' Z';
+  document.getElementById(id).innerHTML =
+    '<defs><linearGradient id="ptg" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#2E86FF" stop-opacity=".22"/><stop offset="1" stop-color="#2E86FF" stop-opacity="0"/></linearGradient></defs>' +
+    '<path d="' + area + '" fill="url(#ptg)"/>' +
+    '<polyline points="' + line + '" fill="none" stroke="#2E86FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<circle cx="' + pts[pts.length-1][0].toFixed(1) + '" cy="' + pts[pts.length-1][1].toFixed(1) + '" r="4" fill="#5BBEFF" stroke="#fff" stroke-width="2"/>';
+}
+function renderPublished(){
+  document.querySelectorAll('#view-published [data-count]').forEach(el => {
+    countUp(el, parseFloat(el.dataset.count), parseInt(el.dataset.dec || '0', 10));
+  });
+  renderTrendIn('pub-trend-svg', pubTrend);
+  let acc = 0;
+  const segs = pubPlatforms.map(t => { const from = acc; acc += t.pct; return t.color + ' ' + from + '% ' + acc + '%'; }).join(', ');
+  document.getElementById('pub-donut').style.background = 'conic-gradient(' + segs + ')';
+  document.getElementById('pub-donut-legend').innerHTML = pubPlatforms.map(t =>
+    '<div class="row"><span class="sw" style="background:' + t.color + '"></span>' + t.name + '<span class="pct">' + t.pct + '%</span></div>').join('');
+  const maxT = Math.max(...pubTypes.map(t => t.pct));
+  document.getElementById('pub-type-chart').innerHTML = pubTypes.map(t =>
+    '<div style="display:grid;grid-template-columns:86px 1fr 40px;gap:10px;align-items:center;margin:9px 0;font-size:12px">' +
+      '<span style="color:var(--ink-2)">' + t.name + '</span>' +
+      '<span class="track"><span class="fill" style="background:' + t.color + '" data-w="' + (t.pct / maxT * 100) + '%"></span></span>' +
+      '<span class="mono" style="text-align:right;font-weight:700">' + t.pct + '%</span>' +
+    '</div>').join('');
+  requestAnimationFrame(() => setTimeout(() => {
+    document.querySelectorAll('#pub-type-chart .fill').forEach(f => f.style.width = f.dataset.w);
+  }, 60));
+  document.getElementById('pub-tbody').innerHTML = pubContents.map(c =>
+    '<tr><td>' + c.title + '</td><td>' + c.plat + '</td><td>' + c.type + '</td>' +
+    '<td class="mono">' + c.play + '</td><td class="mono">' + c.like + '</td><td class="mono">' + c.cmt + ' / ' + c.fav + '</td>' +
+    '<td class="mono">' + c.leads + '</td><td class="mono">' + c.rate + '%</td>' +
+    '<td><span class="status-chip ' + (c.st === '推广中' ? 'mql' : 'new') + '">' + c.st + '</span></td></tr>').join('');
+}
+
+/* ============ 保险合规中心 ============ */
+const regulations = [
+  {name:'《中华人民共和国保险法》', cat:'法律法规', key:'保险经营 / 销售行为', desc:'保险活动基本法，涵盖保险经营规则、保险合同与投保人权益保护。', level:'核心'},
+  {name:'《互联网保险业务监管办法》', cat:'互联网', key:'线上销售 / 信息披露', desc:'规范互联网保险业务的准入、销售、承保与理赔等全流程环节。', level:'核心'},
+  {name:'《中华人民共和国广告法》', cat:'广告宣传', key:'绝对化用语 / 虚假宣传', desc:'禁止使用“国家级、最高级、最佳”等绝对化用语及虚假宣传表述。', level:'高风险'},
+  {name:'《人身保险产品信息披露管理办法》', cat:'产品信息', key:'条款 / 现金价值 / 免责', desc:'要求向投保人充分披露产品条款、现金价值、利益演示与免责事项。', level:'核心'},
+  {name:'《银行保险机构消费者权益保护管理办法》', cat:'消费者保护', key:'适当性 / 知情权', desc:'规范销售适当性管理、知情权与自主选择权保护要求。', level:'重要'},
+  {name:'《保险销售行为管理办法》', cat:'销售行为', key:'销售话术 / 双录', desc:'规范保险销售人员的宣传话术、如实告知与销售过程可回溯要求。', level:'核心'},
+  {name:'《保险公司偿付能力管理规定》', cat:'偿付能力', key:'偿付能力披露', desc:'要求保险公司定期披露偿付能力充足率等信息。', level:'重要'},
+];
+const bannedWords = [
+  {word:'稳赚不赔', risk:'高', replace:'长期稳健增值', scene:'收益宣传'},
+  {word:'100% 赔付', risk:'高', replace:'按合同约定承担保险责任', scene:'理赔宣传'},
+  {word:'保本保息', risk:'高', replace:'具有确定的现金价值', scene:'年金宣传'},
+  {word:'保证收益', risk:'中', replace:'合同约定的确定利益', scene:'收益演示'},
+  {word:'国家级', risk:'高', replace:'删除或替换为具体依据', scene:'广告宣传'},
+  {word:'第一 / 最高 / 最佳', risk:'高', replace:'领先 / 名列前茅（需有事实依据）', scene:'广告宣传'},
+  {word:'随时可退', risk:'中', replace:'犹豫期内可退保，具体以条款为准', scene:'退保宣传'},
+  {word:'限时抢购', risk:'低', replace:'以实际活动规则为准', scene:'活动宣传'},
+];
+function renderCompliance(){
+  const q = ($('#cmp-search').value || '').trim().toLowerCase();
+  const regs = regulations.filter(r => !q || (r.name + r.cat + r.key + r.desc).toLowerCase().includes(q));
+  $('#cmp-reg-tbody').innerHTML = regs.length ? regs.map(r =>
+    '<tr><td>' + r.name + '</td><td>' + r.cat + '</td><td class="muted">' + r.key + '</td><td style="white-space:normal;min-width:220px">' + r.desc + '</td>' +
+    '<td><span class="status-chip ' + (r.level === '高风险' ? 'invalid' : r.level === '核心' ? 'sql' : 'mql') + '">' + r.level + '</span></td></tr>').join('')
+    : '<tr><td colspan="5"><div class="empty">没有匹配的条例</div></td></tr>';
+  const words = bannedWords.filter(w => !q || (w.word + w.scene + w.replace).toLowerCase().includes(q));
+  $('#cmp-word-list').innerHTML = words.length ? words.map(w =>
+    '<div class="suggest"><div><b>' + w.word + '<span class="status-chip ' + (w.risk === '高' ? 'invalid' : w.risk === '中' ? 'mql' : 'new') + '" style="margin-left:6px">' + w.risk + '</span></b>' +
+    '<p>场景：' + w.scene + '｜建议：' + w.replace + '</p></div></div>').join('')
+    : '<div class="small muted">没有匹配的合规词</div>';
+}
+function checkCompliance(){
+  const text = ($('#cmp-input').value || '').trim();
+  const out = document.getElementById('cmp-result');
+  if(!text){ out.innerHTML = '<div class="ai-box">请先输入要检测的文案。</div>'; return; }
+  const hits = bannedWords.filter(w => w.word === '第一 / 最高 / 最佳' ? /第一|最高|最佳/.test(text) : text.includes(w.word));
+  if(!hits.length){
+    out.innerHTML = '<div class="ai-tip" style="margin-top:0"><span>未检测到高风险合规词，可以发布（仍建议人工复核）。</span></div>';
+    return;
+  }
+  out.innerHTML = '<div class="ai-tip" style="margin-top:0;background:var(--danger-soft);color:var(--danger)"><span>检测到 ' + hits.length + ' 处风险表达：</span></div>' +
+    hits.map(h => '<div class="ai-box" style="margin-top:6px"><b>' + h.word + '</b>（' + h.risk + '）｜建议替换为：' + h.replace + '</div>').join('');
+}
+/* ============ Toast ============ */
+function toast(msg){
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = icon('check') + '<span>' + msg + '</span>';
+  $('#toasts').appendChild(el);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 240); }, 3200);
+}
+
+/* ============ 初始化 ============ */
+renderConvoList();
+renderLeads();
+renderScore(84, 75, 92, 70, 88);
+$('#chat-input').addEventListener('keydown', e => { if(e.key === 'Enter') sendInput(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal('lead-modal'), closeModal('record-modal'); });
+renderScripts();
+setTimeout(() => { clearMaker(); playConvo(0); }, 700);
+$('#maker-input').addEventListener('keydown', e => { if(e.key === 'Enter') sendMake(); });
+$('#ai-input').addEventListener('keydown', e => { if(e.key === 'Enter') sendAiAsk(); });
+</script>
+</body>
+</html>
