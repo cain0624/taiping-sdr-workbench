@@ -192,6 +192,16 @@ tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--surface-2)}
 td .who{font-weight:600}
 td .sub{font-size:11px;color:var(--ink-3)}
+.lead-who{display:flex;align-items:center;gap:7px;font-weight:600;white-space:nowrap;min-width:0}
+.lead-who .tag-new{flex:none}
+.lead-acts{white-space:nowrap}
+.lead-btn{font-size:11px;font-weight:600;color:var(--primary-deep);background:#fff;border:1px solid #BBD6F4;border-radius:999px;padding:3px 10px;cursor:pointer;transition:background .16s,color .16s,border-color .16s;margin-right:6px;white-space:nowrap}
+.lead-btn:last-child{margin-right:0}
+.lead-btn:hover{background:var(--primary);border-color:var(--primary);color:#fff}
+.ld-val{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:9px 11px;font-size:13px;color:var(--ink)}
+.rp-opts{display:flex;flex-wrap:wrap;gap:8px}
+.rp-opt{font-size:12.5px;color:var(--ink-2);background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 14px;cursor:pointer;transition:background .16s,color .16s,border-color .16s}
+.rp-opt.on{background:var(--primary-soft);border-color:var(--primary);color:var(--primary-deep);font-weight:600}
 .status-chip{font-size:11px;font-weight:600;border-radius:999px;padding:2px 9px;display:inline-block}
 .status-chip.sql{background:var(--primary-soft);color:var(--primary-deep)}
 .status-chip.mql{background:var(--accent-soft);color:var(--accent-ink)}
@@ -651,7 +661,7 @@ main{height:auto;overflow:visible}
 </div>
 <div class="table-wrap">
 <table>
-<thead><tr><th>客户</th><th>投保意向</th><th>来源</th><th>意向评分</th><th>状态</th><th>分配顾问</th><th>最近跟进</th></tr></thead>
+<thead><tr><th>客户</th><th>操作</th><th>投保意向</th><th>来源</th><th>意向评分</th><th>状态</th><th>分配顾问</th><th>最近跟进</th></tr></thead>
 <tbody id="lead-tbody"></tbody>
 </table>
 </div>
@@ -880,6 +890,30 @@ main{height:auto;overflow:visible}
 <div class="record-note"><b>互动语料：</b>已自动归档本次会话全文，方便后续跟进与交接</div>
 </div>
 <div class="modal-foot"><button class="btn ghost" onclick="closeModal('record-modal')">取消</button><button class="btn primary" onclick="closeModal('record-modal');toast('销售记录已保存，已同步至客户档案')">保存记录</button></div>
+</div>
+</div>
+<div class="modal-mask" id="lead-detail-modal">
+<div class="modal">
+<div class="modal-head"><h3>线索详情</h3><span class="ai-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>AI 画像已同步</span><button class="close" onclick="closeModal('lead-detail-modal')" aria-label="关闭"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+<div class="modal-body" id="ld-body"></div>
+<div class="modal-foot"><button class="btn ghost" onclick="closeModal('lead-detail-modal')">关闭</button><button class="btn primary" id="ld-to-replay">去设置回放</button></div>
+</div>
+</div>
+<div class="modal-mask" id="lead-replay-modal">
+<div class="modal">
+<div class="modal-head"><h3>设置回放</h3><span class="ai-badge">回放提醒</span><button class="close" onclick="closeModal('lead-replay-modal')" aria-label="关闭"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+<div class="modal-body">
+<div class="record-note" id="rp-note"></div>
+<div class="field" style="margin-bottom:12px"><label>回放时间</label>
+<div class="rp-opts" id="rp-opts">
+<button type="button" class="rp-opt on" onclick="pickRp(this)">今天 16:00</button>
+<button type="button" class="rp-opt" onclick="pickRp(this)">今天 18:30</button>
+<button type="button" class="rp-opt" onclick="pickRp(this)">明天 10:00</button>
+</div>
+</div>
+<div class="field"><label>备注（可选）</label><input id="rp-remark" placeholder="例如：客户提到预算 1.5 万/年，重点关注年金 50 万方案"></div>
+</div>
+<div class="modal-foot"><button class="btn ghost" onclick="closeModal('lead-replay-modal')">取消</button><button class="btn primary" onclick="saveReplay()">保存并提醒</button></div>
 </div>
 </div>
 <div class="toasts" id="toasts"></div>
@@ -1176,12 +1210,13 @@ return okF && okQ;
 });
 $('#lead-tbody').innerHTML = rows.length ? rows.map(l =>
 '<tr>' +
-'<td><div class="who">' + l.name + '</div><div class="sub">' + l.phone + '</div></td>' +
+'<td><div class="lead-who"><span class="tag-new">新增线索</span><span class="who">' + l.name + '</span></div><div class="sub">' + l.phone + '</div></td>' +
+'<td class="lead-acts"><button class="lead-btn" onclick="openLeadDetail(\'' + l.id + '\')">查看详情</button><button class="lead-btn" onclick="openReplayModal(\'' + l.name + '\')">设置回放</button></td>' +
 '<td>' + l.type + '</td><td>' + l.source + '</td>' +
 '<td><span class="score-pill ' + (l.score >= 70 ? 'high' : l.score >= 50 ? 'mid' : 'low') + '">' + l.score + '</span></td>' +
 '<td>' + statusChip(l.status) + '</td>' +
 '<td>' + l.owner + '</td><td class="muted">' + l.time + '</td>' +
-'</tr>').join('') : '<tr><td colspan="7"><div style="padding:30px;text-align:center;color:var(--ink-3)">没有匹配的线索，试试调整筛选条件</div></td></tr>';
+'</tr>').join('') : '<tr><td colspan="8"><div style="padding:30px;text-align:center;color:var(--ink-3)">没有匹配的线索，试试调整筛选条件</div></td></tr>';
 }
 function setLeadFilter(f, el){
 leadFilter = f;
@@ -1220,6 +1255,40 @@ if(leadFilter !== 'all'){ leadFilter = 'all'; document.querySelectorAll('#lead-f
 renderLeads();
 }
 function openRecordModal(){ openModal('record-modal'); }
+let replayName = '';
+function openLeadDetail(id){
+const l = leads.find(x => x.id === id);
+if(!l) return;
+const field = (k, v) => '<div class="field"><label>' + k + '</label><div class="ld-val">' + (v || '待补充') + '</div></div>';
+document.getElementById('ld-body').innerHTML =
+'<div class="record-note"><b>AI 画像摘要：</b>' + l.name + ' 关注「' + l.type + '」，来自 ' + l.source + '，当前意向评分 ' + l.score + ' 分，状态为' + (statusMap[l.status] || l.status) + '，已分配至 ' + l.owner + '。</div>' +
+'<div class="form-grid">' +
+field('客户姓名', l.name) + field('联系电话', l.phone) +
+field('投保意向', l.type) + field('线索来源', l.source) +
+field('意向评分', l.score + ' / 100') + field('当前状态', statusMap[l.status] || l.status) +
+field('分配顾问', l.owner) + field('最近跟进', l.time) +
+'</div>';
+document.getElementById('ld-to-replay').setAttribute('onclick', "openReplayModal('" + l.name + "')");
+openModal('lead-detail-modal');
+}
+function openReplayModal(name){
+replayName = name || '';
+document.getElementById('rp-note').innerHTML = '为 <b>' + replayName + '</b> 安排一次回放跟进，保存后将同步提醒。';
+document.getElementById('rp-remark').value = '';
+document.querySelectorAll('#rp-opts .rp-opt').forEach((b, i) => b.classList.toggle('on', i === 0));
+openModal('lead-replay-modal');
+}
+function pickRp(btn){
+btn.parentElement.querySelectorAll('.rp-opt').forEach(b => b.classList.remove('on'));
+btn.classList.add('on');
+}
+function saveReplay(){
+const sel = document.querySelector('#rp-opts .rp-opt.on');
+if(!sel){ toast('请先选择回放时间'); return; }
+closeModal('lead-replay-modal');
+closeModal('lead-detail-modal');
+toast('已为 ' + replayName + ' 设置 ' + sel.textContent + ' 回放提醒');
+}
 function countUp(el, target, dec){
 const dur = reduceMotion ? 0 : 850;
 const t0 = performance.now();
@@ -1591,7 +1660,7 @@ renderConvoList();
 renderLeads();
 renderScore(84, 75, 92, 70, 88);
 $('#chat-input').addEventListener('keydown', e => { if(e.key === 'Enter') sendInput(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal('lead-modal'), closeModal('record-modal'); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal('lead-modal'), closeModal('record-modal'), closeModal('lead-detail-modal'), closeModal('lead-replay-modal'); });
 renderScripts();
 renderMkHistory();
 setTimeout(() => { clearMaker(); playConvo(0); }, 700);
