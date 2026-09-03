@@ -193,6 +193,7 @@ tr:hover td{background:var(--surface-2)}
 td .who{font-weight:600}
 td .sub{font-size:11px;color:var(--ink-3)}
 .lead-who{display:flex;align-items:center;gap:7px;font-weight:600;white-space:nowrap;min-width:0}
+.lead-who .who{font-size:17px}
 .lead-who .tag-new{flex:none}
 .lead-acts{white-space:nowrap}
 .lead-btn{font-size:11px;font-weight:600;color:var(--primary-deep);background:#fff;border:1px solid #BBD6F4;border-radius:999px;padding:3px 10px;cursor:pointer;transition:background .16s,color .16s,border-color .16s;margin-right:6px;white-space:nowrap}
@@ -680,7 +681,7 @@ main{height:auto;overflow:visible}
 </div>
 <div class="table-wrap">
 <table>
-<thead><tr><th>客户</th><th>操作</th><th>投保意向</th><th>来源</th><th>意向评分</th><th>状态</th><th>分配顾问</th><th>最近跟进</th></tr></thead>
+<thead><tr><th>客户</th><th>投保意向</th><th>来源</th><th>意向评分</th><th>状态</th><th>分配顾问</th><th>最近跟进</th><th>操作</th></tr></thead>
 <tbody id="lead-tbody"></tbody>
 </table>
 </div>
@@ -1281,11 +1282,11 @@ return okF && okQ;
 $('#lead-tbody').innerHTML = rows.length ? rows.map(l =>
 '<tr>' +
 '<td><div class="lead-who"><span class="who">' + l.name + '</span>' + (l.isNew ? '<span class="tag-new">今日新增</span>' : '') + '</div><div class="sub">' + l.phone + '</div></td>' +
-'<td class="lead-acts"><button class="lead-btn" onclick="openLeadDetail(\'' + l.id + '\')">查看详情</button><button class="lead-btn" onclick="openReplayModal(\'' + l.name + '\')">设置回放</button></td>' +
 '<td>' + l.type + '</td><td>' + l.source + '</td>' +
 '<td><span class="score-pill ' + (l.score >= 70 ? 'high' : l.score >= 50 ? 'mid' : 'low') + '">' + l.score + '</span></td>' +
 '<td>' + statusChip(l.status) + '</td>' +
 '<td>' + l.owner + '</td><td class="muted">' + l.time + '</td>' +
+'<td class="lead-acts"><button class="lead-btn" onclick="openLeadDetail(\'' + l.id + '\')">查看详情</button><button class="lead-btn" onclick="openReplayModal(\'' + l.name + '\')">设置回放</button></td>' +
 '</tr>').join('') : '<tr><td colspan="8"><div style="padding:30px;text-align:center;color:var(--ink-3)">没有匹配的线索，试试调整筛选条件</div></td></tr>';
 }
 function setLeadFilter(f, el){
