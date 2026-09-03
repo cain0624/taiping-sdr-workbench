@@ -809,7 +809,7 @@ main{height:auto;overflow:visible}
 </div>
 <div class="insight-grid">
 <div class="card wide">
-<div class="card-head">已发布内容<span class="spacer"></span><span class="count">今日发布 3 篇</span></div>
+<div class="card-head">已发布内容<span class="spacer"></span><span class="count">今日发布 4 篇</span><button class="btn sm ghost" id="pub-see-all" onclick="togglePubAll()">查看全部</button></div>
 <div class="card-body"><div class="pub-recent" id="pub-recent"></div></div>
 </div>
 <div class="card wide">
@@ -1698,15 +1698,30 @@ document.getElementById(id).innerHTML =
 const pubToday = [
 {title:'45岁还能买年金险吗？这3个真相你必须知道', plat:'抖音', type:'口播视频', tm:'今天 09:32', st:'推广中', nw:true},
 {title:'45岁买年金险还来得及吗？一张图看懂年龄和保费', plat:'小红书', type:'图文笔记', tm:'今天 10:18', st:'推广中', nw:true},
-{title:'父母 50 岁还能买什么保险？这套配置方案请收好', plat:'抖音', type:'口播视频', tm:'今天 11:05', st:'待投放', nw:true},
+{title:'父母 50 岁还能买什么保险？这套配置方案请收好', plat:'抖音', type:'口播视频', tm:'今天 11:05', st:'推广中', nw:true},
+{title:'年缴 1.5 万，我给全家配齐了保障（附清单）', plat:'小红书', type:'图文笔记', tm:'今天 11:42', st:'待投放', nw:true},
 {title:'理赔被拒的 5 个原因，买保险前一定要知道', plat:'小红书', type:'图文笔记', tm:'昨天 16:40', st:'已结束', nw:false},
-{title:'年缴 1.5 万，我给全家配齐了保障（附清单）', plat:'小红书', type:'图文笔记', tm:'3 天前 10:20', st:'已结束', nw:false}
+{title:'口播｜保险公司拒赔的 3 个真实案例，教你避坑', plat:'抖音', type:'口播视频', tm:'昨天 10:25', st:'已结束', nw:false},
+{title:'年金保额怎么定？年收入 5 倍法则靠谱吗', plat:'抖音', type:'口播视频', tm:'2 天前 15:08', st:'推广中', nw:false},
+{title:'新生儿保险怎么买？儿科顾问的 3 条避坑建议', plat:'小红书', type:'图文笔记', tm:'2 天前 11:20', st:'已结束', nw:false},
+{title:'10 个高点击标题（年金险科普）', plat:'小红书', type:'图文笔记', tm:'3 天前 14:10', st:'已结束', nw:false},
+{title:'年金险和年金险到底先买哪个？别再被销售绕晕', plat:'小红书', type:'图文笔记', tm:'3 天前 10:02', st:'已结束', nw:false},
+{title:'给孩子买年金怎么选？这 3 点别踩坑', plat:'抖音', type:'口播视频', tm:'4 天前 16:35', st:'已结束', nw:false},
+{title:'45 岁投保说明：年龄和保费的真相', plat:'抖音', type:'口播视频', tm:'5 天前 09:50', st:'已结束', nw:false}
 ];
+let pubShowAll = false;
+function togglePubAll(){
+pubShowAll = !pubShowAll;
+const btn = document.getElementById('pub-see-all');
+if(btn) btn.textContent = pubShowAll ? '收起' : '查看全部';
+renderPublished();
+}
 function renderPublished(){
 const countEl = document.querySelector('#view-published .card-head .count');
 const todayN = pubToday.filter(c => c.nw !== false).length;
 if(countEl) countEl.textContent = '今日发布 ' + todayN + ' 篇';
-document.getElementById('pub-recent').innerHTML = pubToday.map(c =>
+const list = pubShowAll ? pubToday : pubToday.slice(0, 8);
+document.getElementById('pub-recent').innerHTML = list.map(c =>
 '<div class="pub-card">' +
 '<div class="pub-card-top">' + (c.nw !== false ? '<span class="tag-new">今日发布</span>' : '') + '<span class="pub-plat">' + c.plat + ' · ' + c.type + '</span></div>' +
 '<div class="pub-card-title">' + c.title + '</div>' +
