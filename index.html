@@ -319,6 +319,10 @@ td .sub{font-size:11px;color:var(--ink-3)}
 .made .mk-tags span{font-size:11px;background:var(--primary-soft);color:var(--primary-deep);border-radius:999px;padding:2px 8px}
 .made .mk-foot{display:flex;gap:12px;margin-top:8px;font-size:11.5px;color:var(--ink-3);flex-wrap:wrap}
 .made .mk-foot b{color:var(--primary)}
+.made-actions{display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:9px;border-top:1px dashed var(--line-2)}
+.made-actions .hint{font-size:11px;color:var(--ink-3)}
+.made-actions .btn{margin-left:0}
+.made-actions .btn:last-child{margin-left:auto}
 .mk-his{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px dashed var(--line-2)}
 .mk-his:last-child{border-bottom:none}
 .mk-his .mk-his-top{display:flex;align-items:center;gap:7px}
@@ -873,7 +877,8 @@ main{height:auto;overflow:visible}
 <div class="field"><label>预算范围 <span class="ai-tag" id="t-budget">AI</span></label><input id="f-budget"></div>
 <div class="field"><label>投保时机 <span class="ai-tag" id="t-time">AI</span></label><input id="f-time"></div>
 <div class="field"><label>健康告知 <span class="ai-tag" id="t-health">AI</span></label><input id="f-health"></div>
-<div class="field"><label>线索来源</label><select id="f-source"><option>小红书</option><option>抖音</option></select></div>
+<div class="field"><label>线索来源</label><select id="f-source"><option>企业微信</option><option>小红书</option><option>抖音</option></select></div>
+<div class="field"><label>下次回访时间 <span style="color:var(--danger)">*</span></label><select id="f-follow"><option value="">请选择回访时间</option><option>明天 10:00</option><option>3 天后 14:30</option><option>下周三 10:00</option><option>1 个月后</option></select></div>
 <div class="field"><label>分配顾问</label><select id="f-owner"><option>张顾问</option><option>李顾问</option><option>王顾问</option><option>待分配</option></select></div>
 </div></div>
 <div class="modal-foot"><button class="btn ghost" onclick="closeModal('lead-modal')">取消</button><button class="btn primary" id="create-btn" onclick="createLead()">创建线索</button></div>
@@ -916,10 +921,35 @@ main{height:auto;overflow:visible}
 <div class="modal-foot"><button class="btn ghost" onclick="closeModal('lead-replay-modal')">取消</button><button class="btn primary" onclick="saveReplay()">保存并提醒</button></div>
 </div>
 </div>
+<div class="modal-mask" id="analysis-modal">
+<div class="modal">
+<div class="modal-head"><h3>AI 沟通分析</h3><span class="ai-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-5 3 3 5-7"/></svg>已生成</span><button class="close" onclick="closeModal('analysis-modal')" aria-label="关闭"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+<div class="modal-body">
+<div class="record-note" id="an-summary"></div>
+<div id="an-detail" style="display:none">
+<div class="score-hero" style="justify-content:center;padding:14px 0 12px">
+<div class="score-num">87<small>/100</small></div>
+<div class="small muted">预计成单率 <b style="color:var(--primary-deep)">87%</b> · 高意向客户</div>
+</div>
+<div class="sec-t">本次沟通做得好的点</div>
+<div class="suggest-list">
+<div class="suggest"><b>身份与购买人已确认</b><p>AI 自动核对手机号并确认王丽女士本人，留资信息真实有效。</p></div>
+<div class="suggest"><b>需求挖掘到位</b><p>成功获取"养老年金、稳健、有一定收益"的核心诉求，画像标签完整。</p></div>
+<div class="suggest"><b>产品推荐获得积极回应</b><p>推荐「鑫享一生」后客户表达愿意与家人商量，意向处于推进阶段。</p></div>
+</div>
+<div class="sec-t">下一步建议</div>
+<div class="suggest-list">
+<div class="suggest"><b>2 天内回访</b><p>客户提到与家人商量，存在决策周期，建议按预设时间及时回访并跟进。</p></div>
+<div class="suggest"><b>准备家庭版方案</b><p>提供领取演示表与家庭版年金组合方案，帮助客户在家庭内部达成共识。</p></div>
+</div>
+</div>
+</div>
+<div class="modal-foot"><button class="btn ghost" onclick="closeModal('analysis-modal')">关闭</button><button class="btn primary" id="an-toggle" onclick="toggleAnalysisDetail()">查看详情</button></div>
+</div>
+</div>
 <div class="toasts" id="toasts"></div>
 <script>
 const leads = [
-{id:'L-2681', name:'王丽', phone:'138****6688', type:'年金险', source:'小红书', score:84, status:'sql', owner:'张顾问', time:'今天 10:26'},
 {id:'L-2680', name:'陈建', phone:'159****2311', type:'年金险', source:'抖音', score:77, status:'mql', owner:'李顾问', time:'今天 09:58'},
 {id:'L-2679', name:'赵敏', phone:'137****9023', type:'年金险', source:'小红书', score:74, status:'mql', owner:'王顾问', time:'今天 09:31'},
 {id:'L-2678', name:'刘洋', phone:'186****7755', type:'年金险', source:'抖音', score:61, status:'new', owner:'待分配', time:'昨天 21:14'},
@@ -927,22 +957,24 @@ const leads = [
 {id:'L-2676', name:'周强', phone:'133****4455', type:'年金险', source:'抖音', score:47, status:'invalid', owner:'李顾问', time:'昨天 16:03'},
 ];
 const convoList = [
-{id:'202609018342', name:'王丽', src:'小红书', age:'45 岁', msg:'我想了解年金险，45岁还能买吗', score:84, chips:['年金险'], unread:false, active:true,
-profile:['45 岁','深圳','家庭保障','年金险意向'],
-summary:'<b>王丽，45 岁，深圳。</b>通过朋友圈广告进入官网，明确咨询年金险投保年龄问题，主动透露预算与健康状况，留资意愿强。',
-hist:[['来源','小红书笔记引流'],['浏览产品页','年金险'],['停留时长','2 分 41 秒']],
-product:'<b>年金险 50 万保额</b>',
-goal:'确认投保年龄与费率约束，推荐组合方案，引导留资并预约顾问回电。',
+{id:'202609018342', name:'王丽', src:'企业微信', age:'45 岁', msg:'你好，我想咨询一下年金险', score:87, chips:['年金险'], unread:true, active:true,
+profile:['45 岁','深圳','养老储备','年金险'],
+summary:'<b>王丽，45 岁，深圳。</b>通过企业微信发起咨询，想为养老储备年金险，关注稳健与收益，留资意愿强。',
+hist:[['来源','企业微信咨询'],['意向','养老年金储备'],['预算','稳健型 · 有一定收益']],
+product:'<b>太平洋鑫享一生 · 年金险</b>',
+goal:'确认身份与购买人，收集养老诉求和预算，推荐产品并引导建档回访。',
 script:[
-{role:'v', text:'你好，我想了解年金险，45岁还能买吗？'},
-{role:'a', text:'您好，可以的。45 岁投保年金险没有年龄障碍，只是保额上限和缴费期会比年轻时有约束，我可以按您的预算做一套方案。方便先了解下您的健康状况和大概预算吗？'},
-{role:'v', text:'身体没什么大毛病，预算一年一万五左右吧'},
-{role:'a', text:'好的，这个预算很合理。建议优先配置：年金险 50 万保额，年缴大概在 1.2 万到 1.5 万。像您这个年龄，越早投保费率越低，核保也更容易通过。'},
-{role:'v', text:'理赔会不会很麻烦？'},
-{role:'a', text:'理赔其实不复杂：确诊或住院后，联系您的专属顾问，我们协助收集资料、提交申请，资料齐全后一般 3 到 7 个工作日结案，全程有顾问跟进，不用自己跑流程。'},
-{role:'a', text:'方便留下您的姓名和联系方式吗？我让顾问把详细方案和保费表发给您。'},
-{role:'v', text:'我叫王丽，电话 138****6688'},
-{role:'a', text:'收到，王女士。已为您预约顾问今日回电，稍后会把方案发到您微信，感谢信任！'}
+{role:'v', text:'你好，我想咨询一下你们的产品'},
+{role:'a', auto:true, text:'您好，王丽女士～请问您的手机号是多少？这边查看下您之前预留的信息。'},
+{role:'v', text:'138****6688'},
+{role:'a', auto:true, text:'好的，已经核对到您的档案。请问您是王丽女士对吗？'},
+{role:'v', text:'是的'},
+{role:'a', auto:true, text:'请问您是想要为自己还是家人购买产品呢？'},
+{role:'v', text:'自己买'},
+{role:'a', auto:true, text:'好的，那您的诉求和预算大概是怎样的呢？'},
+{role:'v', text:'我主要想预留养老的年金险，最好稳定一点，有一点收益的'},
+{role:'a', text:'明白～结合您想储备养老金的诉求，为您推荐「太平洋鑫享一生」年金险：现在 45 岁投保，60 岁起按年领取，现金价值写入合同、长期稳健增值。方便的话，我让顾问把领取演示表发给您参考？'},
+{role:'v', text:'好的，我回去和家人商量一下。'}
 ]},
 {id:'202609018377', name:'陈建', src:'抖音', age:'38 岁', msg:'年金险和年金险哪个更合适', score:77, chips:['年金险'], unread:false,
 profile:['38 岁','杭州','稳健理财','年金 + 年金险对比'],
@@ -1024,7 +1056,9 @@ const suggests = [
 ];
 const $ = s => document.querySelector(s);
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const sleep = ms => new Promise(r => setTimeout(r, reduceMotion ? 0 : ms));
+const demoFastQ = new URLSearchParams(location.search).get('fast');
+const demoFast = demoFastQ ? Math.max(0, Math.min(1, parseFloat(demoFastQ) || 1)) : 0;
+const sleep = ms => new Promise(r => setTimeout(r, reduceMotion ? 0 : (demoFast ? Math.max(60, Math.round(ms * demoFast)) : ms)));
 function icon(name){
 const p = {
 shield:'<path d="M12 2.6 4.2 5.6v5.1c0 4.8 3.3 9.3 7.8 10.7 4.5-1.4 7.8-5.9 7.8-10.7V5.6L12 2.6z"/>',
@@ -1107,19 +1141,30 @@ await typeMsg('v', m.text, '访客 · 刚刚', seq);
 } else {
 await sleep(380);
 if(seq !== playSeq) break;
+if(m.auto){ await typeMsg('a', m.text, '', seq); }
+else {
 const act = await showAiDraft(m.text);
 if(act === 'abort' || seq !== playSeq) break;
+}
 }
 }
 if(seq !== playSeq) return;
 chatBusy = false;
 if(i === 0){
 await sleep(420);
-const b = document.querySelector('#view-chat .func-bubble:nth-child(3)');
-b.classList.add('pulse-ring');
-toast('AI 已识别关键信息，点击「创建线索」一键建档');
-setTimeout(() => b.classList.remove('pulse-ring'), 4600);
+showEndCard();
 }
+}
+function showEndCard(){
+if(document.querySelector('.end-card')) return;
+const el = document.createElement('div');
+el.className = 'draft-card end-card';
+el.innerHTML =
+'<div class="dc-top"><span class="ic"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>AI 识别</span><span class="pending">沟通结束</span></div>' +
+'<div class="dc-body">王丽 表示会与家人商量后再决定，本次沟通已收尾。建议现在为客户创建线索，并设置下次回访时间。</div>' +
+'<div class="dc-foot"><button class="btn ghost sm" onclick="this.closest(\'.end-card\').remove()">稍后处理</button><button class="btn primary sm" onclick="openScenarioLead()">为客户创建线索</button></div>';
+$('#msgs').appendChild(el);
+$('#msgs').scrollTop = $('#msgs').scrollHeight;
 }
 function abortPendingDrafts(){
 const rs = draftResolvers.splice(0);
@@ -1210,7 +1255,7 @@ return okF && okQ;
 });
 $('#lead-tbody').innerHTML = rows.length ? rows.map(l =>
 '<tr>' +
-'<td><div class="lead-who"><span class="tag-new">新增线索</span><span class="who">' + l.name + '</span></div><div class="sub">' + l.phone + '</div></td>' +
+'<td><div class="lead-who"><span class="tag-new">今日新增</span><span class="who">' + l.name + '</span></div><div class="sub">' + l.phone + '</div></td>' +
 '<td class="lead-acts"><button class="lead-btn" onclick="openLeadDetail(\'' + l.id + '\')">查看详情</button><button class="lead-btn" onclick="openReplayModal(\'' + l.name + '\')">设置回放</button></td>' +
 '<td>' + l.type + '</td><td>' + l.source + '</td>' +
 '<td><span class="score-pill ' + (l.score >= 70 ? 'high' : l.score >= 50 ? 'mid' : 'low') + '">' + l.score + '</span></td>' +
@@ -1230,7 +1275,12 @@ function openLeadModal(){
 openModal('lead-modal');
 document.querySelectorAll('#lead-modal input').forEach(i => { i.value = ''; i.classList.remove('filled'); });
 document.querySelectorAll('#lead-modal .ai-tag').forEach(t => t.classList.remove('on'));
+document.getElementById('f-follow').value = '';
 autofill();
+}
+function openScenarioLead(){
+openLeadModal();
+document.getElementById('f-source').value = '企业微信';
 }
 async function autofill(){
 const fields = [
@@ -1248,11 +1298,28 @@ document.getElementById(tag).classList.add('on');
 }
 function createLead(){
 const name = $('#f-name').value || '新客户';
-leads.unshift({id:'L-' + (2682 + leads.length), name, phone:$('#f-phone').value || '待补充', type:$('#f-type').value || '待确认', source:$('#f-source').value, score:84, status:'new', owner:$('#f-owner').value, time:'刚刚'});
+const phone = $('#f-phone').value;
+const follow = $('#f-follow').value;
+if(!follow){ toast('请先选择下次回访时间（必填）'); return; }
+leads.unshift({id:'L-' + (2682 + leads.length), name, phone:phone || '待补充', type:$('#f-type').value || '待确认', source:$('#f-source').value, score:87, status:'new', owner:$('#f-owner').value, time:'刚刚', follow});
 closeModal('lead-modal');
-toast('线索已创建：' + name + '，已分配至 ' + $('#f-owner').value);
 if(leadFilter !== 'all'){ leadFilter = 'all'; document.querySelectorAll('#lead-filters .filter').forEach(x => x.classList.toggle('active', x.dataset.f === 'all')); }
 renderLeads();
+setTimeout(() => openAnalysisModal(name), demoFast ? 400 : 900);
+}
+function openAnalysisModal(name){
+document.getElementById('an-summary').innerHTML = '<b>本次沟通：</b>与 ' + (name || '王丽') + ' 的咨询已完成，AI 已自动生成沟通分析，点击"查看详情"了解成单概率与改进建议。';
+document.getElementById('an-detail').style.display = 'none';
+const btn = document.getElementById('an-toggle');
+btn.textContent = '查看详情';
+openModal('analysis-modal');
+}
+function toggleAnalysisDetail(){
+const d = document.getElementById('an-detail');
+const btn = document.getElementById('an-toggle');
+const show = d.style.display === 'none';
+d.style.display = show ? 'block' : 'none';
+btn.textContent = show ? '收起详情' : '查看详情';
 }
 function openRecordModal(){ openModal('record-modal'); }
 let replayName = '';
@@ -1390,7 +1457,14 @@ $('#topic-grid').innerHTML = rows.length ? rows.map(({t,i}) =>
 '<div class="tc-actions"><button class="btn sm soft" onclick="adoptTopic(' + i + ')">采用选题</button><button class="btn sm ghost" onclick="goMaker(' + i + ')">生成内容</button></div>' +
 '</div>').join('') : '<div class="empty">没有匹配的选题，换个关键词试试</div>';
 }
-function adoptTopic(i){ toast('已加入选题清单：' + topics[i].title.slice(0, 18) + '…'); }
+function adoptTopic(i){
+const t = topics[i];
+switchView('maker');
+const input = $('#maker-input');
+input.value = '基于选题「' + t.title.slice(0, 24) + '」写一条' + (t.platform === 'xhs' ? '小红书图文' : '抖音口播') + '，语气亲和，符合保险合规要求';
+input.focus();
+toast('选题已同步至内容制作，可编辑后生成内容');
+}
 function goMaker(i){
 const t = topics[i];
 switchView('maker');
@@ -1405,6 +1479,7 @@ text:'45 岁想买年金险，别被「太晚了」劝退。这个年龄确实�
 {title:'年缴 1.5 万，我给全家配齐了保障（附清单）', tm:'11:12', today:true,
 text:'这款年金险保本保息，限时抢购，适合追求稳健收益的家庭，现在配置还能锁定当前费率，错过今天就没有了。'}
 ];
+let latestMade = null;
 function addMakeMsg(role, html){
 const el = document.createElement('div');
 el.className = role === 'v' ? 'msg v' : 'made';
@@ -1426,18 +1501,19 @@ const s = input.toLowerCase();
 const plat = $('#mk-platform').value, type = $('#mk-type').value, style = $('#mk-style').value;
 const note = '已按「' + plat + ' · ' + type + ' · ' + style + '」生成';
 if(s.includes('抖音') || s.includes('口播') || plat === '抖音'){
-return {title:'45岁还能买年金险吗？这3个真相你必须知道', body:'【开头钩子】45 岁想买年金险，结果发现保额被限、保费还贵？\n\n【正文】第一，45 岁投保保额通常上限 50 万；第二，缴费期只能选 10 或 15 年；第三，越早投保，每年省下 10% 到 20% 的保费。\n\n【结尾】想知道自己能买多少保额？评论区扣「1」，顾问帮你免费测算。', tags:['#年金险','#保险科普','#45岁投保','#家庭保障'], score:93, note};
+return {title:'45岁还能买年金险吗？这3个真相你必须知道', body:'【开头钩子】45 岁想买年金险，结果发现保额被限、保费还贵？\n\n【正文】① 45 岁投保保额通常上限 50 万；② 缴费期只能选 10 或 15 年；③ 越早投保，每年省下 10% 到 20% 的保费。\n\n【结尾】想知道自己能买多少保额？评论区扣「1」，顾问帮你免费测算。', tags:['#年金险','#保险科普','#45岁投保','#家庭保障'], score:93, note};
 }
 if(s.includes('标题')){
 return {title:'10 个高点击标题（年金险科普）', body:'1. 45 岁买年金险，晚一年贵多少钱？\n2. 年金险和年金险，先买哪个？\n3. 理赔被拒的 5 个原因\n4. 年缴 1.5 万，我这样给全家配齐保障\n5. 父母 50 岁还能买什么保险？\n6. 保额怎么定？年收入 5 倍法则\n7. 新生儿年金险避坑指南\n8. 年金险的「坑」，销售不会告诉你\n9. 45 岁投保，健康告知要注意什么\n10. 一文看懂年金险缴费期怎么选', tags:['#年金险','#选题库'], score:88, note};
 }
-return {title:'45岁买年金险还来得及吗？聊聊年龄和保费的真相', body:'45 岁想买年金险，别被「太晚了」劝退。\n\n这年龄确实有约束：保额上限通常 50 万，缴费期 10 到 15 年，保费比 30 岁贵约三成。但只要健康告知没问题，依然值得配置：年金 50 万 + 年金险，年缴 1.2 到 1.5 万就能搭好基础保障。\n\n越早投保，费率越低、核保越容易通过。如果你也在纠结，评论区留下年龄，我帮你看看适合的方案。', tags:['#年金险','#保险科普','#45岁投保','#家庭保障'], score:92, note};
+return {title:'45岁买年金险还来得及吗？聊聊年龄和保费的真相', body:'45 岁想买年金险，别被「太晚了」劝退。\n\n这个年龄确实有约束：保额上限通常 50 万，缴费期 10 到 15 年，保费比 30 岁贵约三成。但只要健康告知没问题，依然值得配置，可以按需搭配养老年金与稳健型产品。\n\n越早投保，费率越低、核保越容易通过。如果你也在纠结，评论区留下年龄，我帮你看看适合的方案。', tags:['#年金险','#保险科普','#45岁投保','#养老储备'], score:92, note};
 }
 function renderMade(res){
 return '<div class="mk-title">' + res.title + '</div>' +
 '<div class="mk-body">' + res.body + '</div>' +
 (res.tags && res.tags.length ? '<div class="mk-tags">' + res.tags.map(t => '<span>' + t + '</span>').join('') + '</div>' : '') +
-'<div class="mk-foot"><span>预计爆款指数 <b>' + res.score + '</b></span><span>' + res.note + '</span></div>';
+'<div class="mk-foot"><span>预计爆款指数 <b>' + res.score + '</b></span><span>' + res.note + '</span></div>' +
+'<div class="made-actions"><span class="hint">已生成，建议先检测再发布</span><button class="mk-check" onclick="checkLatestMade()">去检测</button><button class="btn sm soft" onclick="publishMade()">发布</button></div>';
 }
 async function sendMake(){
 const input = $('#maker-input');
@@ -1448,6 +1524,7 @@ addMakeMsg('v', text);
 await aiType();
 const res = makeContent(text);
 addMakeMsg('a', renderMade(res));
+latestMade = {title:res.title, body:res.body, plat:$('#mk-platform').value, type:$('#mk-type').value, published:false};
 const now = new Date();
 mkHistory.unshift({title: res.title, tm: String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0'), today: true, text: res.body.slice(0, 180)});
 renderMkHistory();
@@ -1483,6 +1560,23 @@ const card = box.closest('.card');
 if(card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 }, 150);
+}
+function checkLatestMade(){
+if(!latestMade){ toast('暂无可检测的生成内容'); return; }
+switchView('compliance');
+const input = document.getElementById('cmp-input');
+if(input) input.value = latestMade.body;
+setTimeout(() => checkCompliance(), 150);
+}
+function publishMade(){
+if(!latestMade || latestMade.published){ toast('暂无可发布的新内容'); return; }
+latestMade.published = true;
+pubToday.unshift({title:latestMade.title, plat:latestMade.plat, type:latestMade.type, tm:'刚刚', st:'推广中'});
+pubContents.unshift({title:latestMade.title, plat:latestMade.plat, type:latestMade.type, play:'—', like:'—', cmt:'0', fav:'—', leads:0, rate:0, st:'推广中'});
+latestMade = null;
+switchView('published');
+renderPublished();
+toast('内容已发布，已同步至发布中心');
 }
 const aiScripts = [
 {tag:'解答', title:'45 岁投保说明', text:'您好，45 岁投保年金险没有年龄障碍，只是保额上限和缴费期会比年轻时有约束。方便先了解下您的健康状况和大概预算吗？'},
@@ -1568,12 +1662,14 @@ document.getElementById(id).innerHTML =
 '<polyline points="' + line + '" fill="none" stroke="#2E86FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
 '<circle cx="' + pts[pts.length-1][0].toFixed(1) + '" cy="' + pts[pts.length-1][1].toFixed(1) + '" r="4" fill="#5BBEFF" stroke="#fff" stroke-width="2"/>';
 }
-function renderPublished(){
 const pubToday = [
 {title:'45岁还能买年金险吗？这3个真相你必须知道', plat:'抖音', type:'口播视频', tm:'今天 09:32', st:'推广中'},
 {title:'45岁买年金险还来得及吗？一张图看懂年龄和保费', plat:'小红书', type:'图文笔记', tm:'今天 10:18', st:'推广中'},
 {title:'父母 50 岁还能买什么保险？这套配置方案请收好', plat:'抖音', type:'口播视频', tm:'今天 11:05', st:'待投放'}
 ];
+function renderPublished(){
+const countEl = document.querySelector('#view-published .card-head .count');
+if(countEl) countEl.textContent = '今日发布 ' + pubToday.length + ' 篇';
 document.getElementById('pub-recent').innerHTML = pubToday.map(c =>
 '<div class="pub-card">' +
 '<div class="pub-card-top"><span class="tag-new">今日发布</span><span class="pub-plat">' + c.plat + ' · ' + c.type + '</span></div>' +
@@ -1660,10 +1756,11 @@ renderConvoList();
 renderLeads();
 renderScore(84, 75, 92, 70, 88);
 $('#chat-input').addEventListener('keydown', e => { if(e.key === 'Enter') sendInput(); });
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal('lead-modal'), closeModal('record-modal'), closeModal('lead-detail-modal'), closeModal('lead-replay-modal'); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal('lead-modal'), closeModal('record-modal'), closeModal('lead-detail-modal'), closeModal('lead-replay-modal'), closeModal('analysis-modal'); });
 renderScripts();
 renderMkHistory();
 setTimeout(() => { clearMaker(); playConvo(0); }, 700);
+setTimeout(() => toast('企业微信新消息：王丽 发起年金险咨询，已同步至会话工作台'), demoFast ? 900 : 2200);
 $('#maker-input').addEventListener('keydown', e => { if(e.key === 'Enter') sendMake(); });
 $('#ai-input').addEventListener('keydown', e => { if(e.key === 'Enter') sendAiAsk(); });
 </script>
