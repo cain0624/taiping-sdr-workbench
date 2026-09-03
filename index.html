@@ -442,6 +442,16 @@ body{background:radial-gradient(120% 150% at 0% -15%, rgba(175,220,255,.50) 0%, 
 .topbar > *{position:relative;z-index:1}
 .panel,.card,.kpi,.topic-card,.table-wrap{box-shadow:none}
 .topic-card:hover{box-shadow:none}
+@media (min-width:1241px){
+#view-maker .maker-grid{height:calc(100vh - 139px);min-height:0;align-items:stretch}
+#view-maker .maker-chat{height:100%;min-height:0}
+#view-maker .agent-panel{height:100%;max-height:none;padding:0;overflow:hidden;display:flex;flex-direction:column;gap:7px}
+#view-maker .agent-panel .card:last-child{flex:1;min-height:0;display:flex;flex-direction:column}
+#view-maker .agent-panel .card:last-child .card-body{flex:1;overflow:auto;min-height:0}
+}
+@media (min-width:1900px){
+#view-maker .maker-grid{height:calc(100vh - 153px)}
+}
 @supports (height:100dvh){
 .app{height:calc(100dvh - 50px)}
 }
@@ -1270,7 +1280,7 @@ return okF && okQ;
 });
 $('#lead-tbody').innerHTML = rows.length ? rows.map(l =>
 '<tr>' +
-'<td><div class="lead-who">' + (l.isNew ? '<span class="tag-new">今日新增</span>' : '') + '<span class="who">' + l.name + '</span></div><div class="sub">' + l.phone + '</div></td>' +
+'<td><div class="lead-who"><span class="who">' + l.name + '</span>' + (l.isNew ? '<span class="tag-new">今日新增</span>' : '') + '</div><div class="sub">' + l.phone + '</div></td>' +
 '<td class="lead-acts"><button class="lead-btn" onclick="openLeadDetail(\'' + l.id + '\')">查看详情</button><button class="lead-btn" onclick="openReplayModal(\'' + l.name + '\')">设置回放</button></td>' +
 '<td>' + l.type + '</td><td>' + l.source + '</td>' +
 '<td><span class="score-pill ' + (l.score >= 70 ? 'high' : l.score >= 50 ? 'mid' : 'low') + '">' + l.score + '</span></td>' +
